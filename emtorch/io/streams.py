@@ -7,6 +7,7 @@ Stream (files, pipes etc.) bases I/O components.
 """
 
 import logging
+from threading import Event
 from typing import IO
 
 from . import Selectable
@@ -60,6 +61,10 @@ class StreamWriter(OutputStream):
     def __init__(self, name: str, stream: IO[bytes], data: bytes):
         super().__init__(name, stream)
         self._data = data
+        self._event_done = Event()
+
+    def wait_for_done(self, timeout: float) -> bool:
+        return self._event_done.wait(timeout)
 
     def write(self) -> None:
         self.logger.info(f"writing {len(self._data)} bytes.")
@@ -71,6 +76,7 @@ class StreamWriter(OutputStream):
         if len(self._data) == 0:
             self.logger.info("closing the stream")
             self.close()
+            self._event_done.set()
 
     def wants_to_write(self) -> bool:
         return len(self._data) > 0

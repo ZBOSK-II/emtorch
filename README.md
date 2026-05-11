@@ -256,17 +256,27 @@ Available task types:
   * `logger-int-matcher` - scans logs for a pattern and
     stores it as integer value (monitoring subtask only).
     Arguments:
-      - `value` - name for the value to store
-      - `pattern` - regular expression containing named
+      - `value` - (string) name for the value to store
+      - `pattern` - (string) regular expression containing named
          group `value` used to extract the value
-      - `subtask` - subtask which logs should be scanned
+      - `subtask` - (string) subtask which logs should be
+         scanned
   * `logger-float-matcher` - scans logs for a pattern and
     stores it as real value (monitoring subtask only).
     Arguments:
-      - `value` - name for the value to store
-      - `pattern` - regular expression containing named
+      - `value` - (string) name for the value to store
+      - `pattern` - (string) regular expression containing named
          group `value` used to extract the value
-      - `subtask` - subtask which logs should be scanned
+      - `subtask` - (string) subtask which logs should be
+         scanned
+    Arguments:
+      - `path` - ($-string) path to file to write to
+      - `append` - (boolean) if true appends to an existing
+         file, overwrites otherwise (default: false)
+      - `lines` - ($-string array) lines to write to a file
+      - `encoding` - (string) file encoding (default: utf-8)
+      - `timeout` - (float) time required to write to the
+         file in seconds (default: 5)
 
 $-strings in arguments allow for interpolation of `$KEYWORD`
 inside passed string. Both `$KEYWORD` and `${KEYWORD}` are

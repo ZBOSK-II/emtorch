@@ -68,6 +68,11 @@ def subtask_from_config(config: Config, context: Context, *prefix: str) -> SubTa
             from .logger_matcher import LoggerFloatMatcher
 
             return LoggerFloatMatcher.from_config(name, args, context)
+        case "file-write":
+            # pylint: disable=import-outside-toplevel
+            from .files import FileWriter
+
+            return FileWriter.from_config(name, args, context)
         case _:
             raise ValueError(f"Unknown sub-task type '{task_type}'")
 
