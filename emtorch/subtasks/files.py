@@ -7,6 +7,7 @@ Module holding sub-tasks related to files.
 """
 
 import logging
+import os
 from typing import Self
 
 from ..config import Config
@@ -42,9 +43,12 @@ class FileWriter(BasicSubTask):
     def basic_start(self, context: CaseContext) -> bool:
         path = self._path.evaluate(context)
         mode = ("a" if self._append else "w") + "b"
+        flags = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if self._append else os.O_TRUNC)
         try:
             # pylint: disable=consider-using-with
-            file = open(path, mode)
+            fd = os.open(path, flags, 0o666)
+            os.set_blocking(fd, False)
+            file = os.fdopen(fd, mode)
         except IOError as ex:
             self.logger.error(f"Open file failed '{path}' - {ex}")
             return False
