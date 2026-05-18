@@ -68,7 +68,7 @@ isort = "8.0.1"
 mypy = "2.0.0"
 pylint = "4.0.5"
 pytest = "9.0.3"
-types-paramiko = "4.0.0.20260408"
+types-paramiko = "4.0.0.20260508"
 
 [tool.mypy]
 strict = true
