@@ -49,8 +49,15 @@ class FileWriter(BasicSubTask):
         flags = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if self._append else os.O_TRUNC)
         try:
             fd = os.open(path, flags, 0o666)
-            os.set_blocking(fd, False)
-            file = os.fdopen(fd, mode)
+            try:
+                os.set_blocking(fd, False)
+                file = os.fdopen(fd, mode)
+            except OSError:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                raise
         except IOError as ex:
             self.logger.error(f"Open file failed '{path}' - {ex}")
             return False
