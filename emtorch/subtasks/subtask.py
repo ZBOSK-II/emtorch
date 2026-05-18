@@ -42,7 +42,7 @@ class SubTask(ABC):
         return self._logger
 
     @abstractmethod
-    def start(self, context: CaseContext) -> str | StartedType:
+    def start(self, context: CaseContext) -> StartResult:
         pass
 
     @abstractmethod
