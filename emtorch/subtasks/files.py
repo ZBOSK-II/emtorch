@@ -53,6 +53,7 @@ class FileWriter(BasicSubTask):
         data = "\n".join(lines).encode(self._encoding)
 
         self._writer = StreamWriter(self.name, file, data)
+        self._io.add_stream(self._writer)
         return True
 
     def finish(self) -> BasicSubTask.Result:
