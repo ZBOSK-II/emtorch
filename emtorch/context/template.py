@@ -8,6 +8,10 @@ Provides Template class based on string.Template ($-string) but case-sensitive.
 
 from re import RegexFlag
 from string import Template as StringTemplate
+from typing import Any
+
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import CoreSchema, core_schema
 
 from . import CaseContext
 
@@ -22,3 +26,10 @@ class Template(StringTemplate):
             EMTORCH_DATA_PATH=str(context.case.data.path),
             EMTORCH_DATA_FILENAME=context.case.data.path.name,
         )
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        _ = source_type
+        return core_schema.no_info_after_validator_function(cls, handler(str))

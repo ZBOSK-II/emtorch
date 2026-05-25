@@ -3,147 +3,150 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module providing subprocess based sub tasks.
+Module containing subprocess subtask.
 """
 
-import logging
-import subprocess
-from dataclasses import dataclass
-from signal import Signals
-from typing import Optional, Self
+import asyncio
+import asyncio.subprocess
+from abc import abstractmethod
+from dataclasses import field
+from typing import Annotated
 
-from ..config import Config
-from ..context import CaseContext, Context
+from ..config import Doc, configclass
+from ..config.signal import Signal
 from ..context.template import Template
-from ..io import IOLoop
-from ..io.streams import StreamLogger
-from .subtask import BasicSubTask
-
-logger = logging.getLogger(__name__)
+from . import BasicSubTask, LoggerAdapter, SubTaskContext
 
 
-@dataclass
-class FinishConfig:
-    timeout: float
-    signal: Optional[Signals]
-
-    @staticmethod
-    def _signal_from_name(name: str) -> Optional[Signals]:
-        if name == "NONE":
-            return None
-        try:
-            return Signals[name]
-        except KeyError:
-            logger.warning(f"Invalid signal name in configuration: {name}")
-            return None
-
-    @classmethod
-    def from_config(cls, config: Config) -> Self:
-        return cls(
-            config.get_float("timeout"),
-            cls._signal_from_name(config.get_str("signal")),
-        )
+async def stream_logger(
+    name: str, logger: LoggerAdapter, reader: asyncio.StreamReader | None
+) -> None:
+    assert reader
+    while not reader.at_eof():
+        line = await reader.readline()
+        if line:
+            logger.info(f"{name} - {bytes(line.rstrip())!r}")
 
 
 class Subprocess(BasicSubTask):
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def __init__(
-        self,
-        name: str,
-        args: list[str],
-        shell: bool,
-        finish_config: FinishConfig,
-        io: IOLoop,
-        check_exit_code: bool = True,
-        subtask_logger: logging.Logger = logger,
-    ):
-        super().__init__(name, subtask_logger)
+    def __init__(self, signal: Signal | None, timeout: float):
+        self._signal = signal
+        self._timeout = timeout
 
-        self.args = [Template(arg) for arg in args]
-        self.shell = shell
-        self.finish_config = finish_config
+    @abstractmethod
+    async def create_process(
+        self, context: SubTaskContext
+    ) -> asyncio.subprocess.Process:
+        pass
 
-        self.io = io
+    async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
+        proc = await self.create_process(context)
 
-        self.process: Optional[subprocess.Popen[bytes]] = None
+        self._install_signal(proc, context)
 
-        self.check_exit_code = check_exit_code
-
-    def basic_start(self, context: CaseContext) -> bool:
         try:
-            args = [arg.evaluate(context) for arg in self.args]
-            self.logger.info(f"Starting {args}")
-            self.process = subprocess.Popen(  # pylint: disable=consider-using-with
-                args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                stdin=subprocess.PIPE,
-                text=False,
-                shell=self.shell,
+            retcode, _, _ = await asyncio.gather(
+                asyncio.wait_for(proc.wait(), self._timeout),
+                asyncio.create_task(
+                    stream_logger("STDOUT", context.logger, proc.stdout)
+                ),
+                asyncio.create_task(
+                    stream_logger("STDERR", context.logger, proc.stderr)
+                ),
             )
-        except Exception as ex:  # pylint: disable=broad-exception-caught
-            self.logger.error(f"Operation error: {ex}")
-            return False
-
-        assert self.process.stdout is not None
-        assert self.process.stderr is not None
-        self.io.register(StreamLogger(self.name, "STDOUT", self.process.stdout))
-        self.io.register(StreamLogger(self.name, "STDERR", self.process.stderr))
-        return True
-
-    def finish(self) -> BasicSubTask.Result:
-        assert self.process is not None
-        assert self.process.stdout is not None
-        assert self.process.stderr is not None
-        assert self.process.stdin is not None
-
-        result = self._finish_process()
-
-        if self.process.poll() is None:
-            self.process.terminate()
-
-        self.io.close(self.process.stdin)
-        self.io.close(self.process.stdout)
-        self.io.close(self.process.stderr, block=True)
-        # it's a queue so we can wait only for the last one
-
-        return result
-
-    def _finish_process(self) -> BasicSubTask.Result:
-        assert self.process is not None
-
-        if self.finish_config.signal:
-            self.logger.info(f"Sending signal {self.finish_config.signal.name}")
-            self.process.send_signal(self.finish_config.signal)
-
-        try:
-            self.process.wait(timeout=self.finish_config.timeout)
-        except subprocess.TimeoutExpired:
-            self.logger.warning("Operation timeout")
+        except TimeoutError:
+            context.logger.warning("Operation timed out")
             return self.Result.TIMEOUT
-        except Exception as ex:  # pylint: disable=broad-exception-caught
-            self.logger.error(f"Operation error: {ex}")
-            return self.Result.ERROR
 
-        returncode = self.process.returncode
-        if returncode != 0:
-            self.logger.log(
-                logging.WARNING if self.check_exit_code else logging.INFO,
-                f"Operation returned {returncode}",
-            )
-            if self.check_exit_code:
-                return self.Result.FAILURE
+        if retcode != 0:
+            context.logger.warning(f"Operation returned {retcode}")
+            return self.Result.FAILURE
 
-        self.logger.info("Operation finished successfully")
+        context.logger.info("Operation finished successfully")
         return self.Result.SUCCESS
 
-    @classmethod
-    def from_config(cls, name: str, config: Config, context: Context) -> Self:
-        return cls(
-            name=name,
-            args=config.get_str_list("cmd"),
-            shell=config.get_bool("shell"),
-            finish_config=FinishConfig.from_config(config.section("finish")),
-            io=context.worker(IOLoop),
+    def _install_signal(
+        self, proc: asyncio.subprocess.Process, context: SubTaskContext
+    ) -> None:
+        if self._signal is None:
+            return
+
+        async def signal_process() -> None:
+            assert self._signal
+
+            await context.wait_for_actions_ended()
+            context.logger.info(
+                f"Sending signal {self._signal.name} ({self._signal.value})"
+            )
+            proc.send_signal(self._signal.value)
+
+        asyncio.create_task(signal_process())
+
+
+class Shell(Subprocess):
+    """
+    Executes system shell command.
+    """
+
+    @configclass
+    class Config:
+        cmd: Annotated[Template, Doc("shell command to be executed")]
+        timeout: Annotated[float, Doc("execution timeout")] = 1.0
+        signal: Annotated[
+            Signal | None,
+            Doc("signal name to be sent to the program at the end of monitoring"),
+        ] = None
+
+    def __init__(self, config: Config):
+        super().__init__(config.signal, config.timeout)
+        self._config = config
+
+    async def create_process(
+        self, context: SubTaskContext
+    ) -> asyncio.subprocess.Process:
+        cmd = self._config.cmd.evaluate(context.parent)
+
+        context.logger.info(f"Starting shell command: {cmd}")
+
+        return await asyncio.create_subprocess_shell(
+            cmd=cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+
+
+class Exec(Subprocess):
+    """
+    Executes provided program as subprocess.
+    """
+
+    # pylint: disable=invalid-field-call
+    @configclass
+    class Config:
+        program: Annotated[Template, Doc("program to be executed")]
+        args: Annotated[list[Template], Doc("program arguments")] = field(
+            default_factory=list
+        )
+        timeout: Annotated[float, Doc("execution timeout")] = 1.0
+        signal: Annotated[
+            Signal | None,
+            Doc("signal name to be sent to the program at the end of monitoring"),
+        ] = None
+
+    def __init__(self, config: Config):
+        super().__init__(config.signal, config.timeout)
+        self._config = config
+
+    async def create_process(
+        self, context: SubTaskContext
+    ) -> asyncio.subprocess.Process:
+        program = self._config.program.evaluate(context.parent)
+        args = [arg.evaluate(context.parent) for arg in self._config.args]
+
+        context.logger.info(f"Starting process: {program} {' '.join(args)}")
+
+        return await asyncio.create_subprocess_exec(
+            program,
+            *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )

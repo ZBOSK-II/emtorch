@@ -6,80 +6,101 @@
 Module representing remote (SSH) task as sub-tasks.
 """
 
-import logging
-from typing import Self
+import asyncio
+from typing import Annotated
 
-from ..config import Config
-from ..context import CaseContext
-from ..ssh import ConnectionConfig, Invoker
-from .subprocess import FinishConfig
-from .subtask import BasicSubTask
+import asyncssh
+
+from ..config import Doc, configclass
+from ..config.signal import Signal
+from ..config.ssh import ConnectionConfig
+from ..context.template import Template
+from . import BasicSubTask, LoggerAdapter, SubTaskContext
+
+
+async def stream_logger(
+    name: str, logger: LoggerAdapter, stream: asyncssh.SSHReader[str]
+) -> None:
+    async for line in stream:
+        if line:
+            logger.info(f"{name} - {line.rstrip()}")
 
 
 class Remote(BasicSubTask):
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def __init__(
+    """
+    Executes command on remote machine connected via SSH.
+    """
+
+    @configclass
+    class Config:
+        connection: Annotated[ConnectionConfig, Doc("SSH connection configuration")]
+        cmd: Annotated[Template, Doc("command to be executed remotely")]
+        timeout: Annotated[float, Doc("operation timeout")] = 5
+        signal: Annotated[
+            Signal | None,
+            Doc("signal name to be sent to the program at the end of monitoring"),
+        ] = None
+
+    def __init__(self, config: Config):
+        self._config = config
+
+    def _install_signal(
         self,
-        name: str,
-        command: str,
-        start_key: str,
-        connection_config: ConnectionConfig,
-        start_timeout: float,
-        finish_config: FinishConfig,
-    ):
-        super().__init__(name, logging.getLogger(__name__))
-        self.invoker = Invoker(
-            name=name,
-            command=command,
-            connection_config=connection_config,
-            start_key=start_key,
-        )
-        self.start_timeout = start_timeout
-        self.finish_config = finish_config
+        pid: str,
+        conn: asyncssh.SSHClientConnection,
+        context: SubTaskContext,
+    ) -> None:
+        if self._config.signal is None:
+            return
 
-    def basic_start(self, context: CaseContext) -> bool:
+        async def signal_process() -> None:
+            assert self._config.signal
+
+            signal = self._config.signal
+
+            await context.wait_for_actions_ended()
+            context.logger.info(f"Sending remote signal {signal.name} ({signal.value})")
+            await conn.run(f"kill -{signal.value} -{pid}")
+            # proc.send_signal(signal.name)
+
+        asyncio.create_task(signal_process())
+
+    async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
+        cmd = "echo $$; exec " + self._config.cmd.evaluate(context.parent)
+
+        context.logger.info(f"Executing remotely: {cmd}")
+
         try:
-            self.invoker.open()
-            if not self.invoker.wait_for_start(self.start_timeout):
-                self.invoker.close()
-                return False
-            return True
-        except Exception as ex:  # pylint: disable=broad-exception-caught
-            self.logger.error(f"Failed to start remote task <{self.name}>: {ex}")
-            return False
+            async with self._config.connection.open() as conn:
+                proc = await conn.create_process(cmd)
 
-    def finish(self) -> BasicSubTask.Result:
-        if self.finish_config.signal:
-            try:
-                self.invoker.signal(self.finish_config.signal)
-            except Exception as ex:  # pylint: disable=broad-exception-caught
-                signal = self.finish_config.signal
-                self.logger.error(
-                    f"Failed to send signal {signal} to remote task <{self.name}>: {ex}"
+                pid = await proc.stdout.readline()
+                context.logger.info(f"Started PID={pid}")
+
+                self._install_signal(pid, conn, context)
+
+                await asyncio.gather(
+                    asyncio.wait_for(proc.wait(), self._config.timeout),
+                    asyncio.create_task(
+                        stream_logger("STDOUT", context.logger, proc.stdout)
+                    ),
+                    asyncio.create_task(
+                        stream_logger("STDERR", context.logger, proc.stderr)
+                    ),
                 )
-                return self.Result.ERROR
-        try:
-            result = self.invoker.wait_for_exit(self.finish_config.timeout)
-            return self.Result.SUCCESS if (result == 0) else self.Result.FAILURE
-        except TimeoutError:
-            return self.Result.TIMEOUT
-        except Exception as ex:  # pylint: disable=broad-exception-caught
-            self.logger.error(
-                f"Failed while waiting for remote task <{self.name}>: {ex}"
-            )
-            return self.Result.ERROR
-        finally:
-            self.invoker.close()
 
-    @classmethod
-    def from_config(cls, name: str, config: Config) -> Self:
-        return cls(
-            name=name,
-            command=config.get_str("command"),
-            start_key=config.get_str("start_key"),
-            connection_config=ConnectionConfig.from_config(
-                config.section("connection")
-            ),
-            start_timeout=config.get_float("start_timeout"),
-            finish_config=FinishConfig.from_config(config.section("finish")),
-        )
+                if proc.exit_status != 0:
+                    context.logger.warning(
+                        f"Command exited with code: {proc.exit_status}"
+                    )
+                    return self.Result.FAILURE
+
+        except asyncssh.misc.Error as ex:
+            context.logger.error(f"Error while executing command: {ex}")
+            return self.Result.ERROR
+        except TimeoutError:
+            context.logger.warning("Command timed out")
+            return self.Result.TIMEOUT
+
+        context.logger.info("Command finished successfully")
+        return self.Result.SUCCESS

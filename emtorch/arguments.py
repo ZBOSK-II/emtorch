@@ -16,7 +16,7 @@ class RepeatMode(Enum):
     ABAB = "abab"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Arguments:
     data: list[Path]
     output_prefix: str

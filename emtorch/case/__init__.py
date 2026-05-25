@@ -6,66 +6,91 @@
 Module representing "case" - a single instance of the experiment execution.
 """
 
+import logging
+from dataclasses import field
 from typing import Self
 
-from ..config import Config
+from ..config import configclass
 from ..context import CaseContext, Context
 from ..delay import Delay
-from ..subtasks import SubTasks
+from ..subtasks import SubTasks, SubTasksBuilder
+
+logger = logging.getLogger(__name__)
 
 
+# pylint: disable=duplicate-code
 class CaseDelays:
+    @configclass
+    class Config:
+        between_cases: float
+        before_actions: float
+
     def __init__(self, between_cases: Delay, before_actions: Delay):
         self._between_cases = between_cases
         self._before_actions = before_actions
 
-    def wait_before_actions(self) -> None:
-        self._before_actions.wait()
+    async def wait_before_actions(self) -> None:
+        await self._before_actions.wait()
 
-    def wait_between_cases(self) -> None:
-        self._between_cases.wait()
+    async def wait_between_cases(self) -> None:
+        await self._between_cases.wait()
 
     @classmethod
-    def from_config(cls, *prefix: str, config: Config) -> Self:
+    def from_config(cls, config: Config) -> Self:
         return cls(
-            between_cases=Delay.from_config(*prefix, "between_cases", config=config),
-            before_actions=Delay.from_config(*prefix, "before_actions", config=config),
+            between_cases=Delay(config.between_cases, "delays.between_cases"),
+            before_actions=Delay(config.before_actions, "delays.before_actions"),
         )
 
 
 class Case:
+    # pylint: disable=invalid-field-call
+    @configclass
+    class Config:
+        delays: CaseDelays.Config
+        setups: SubTasks.Config = field(default_factory=list)
+        monitoring: SubTasks.Config = field(default_factory=list)
+        actions: SubTasks.Config = field(default_factory=list)
+        checks: SubTasks.Config = field(default_factory=list)
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
+        *,
         delays: CaseDelays,
         setups: SubTasks,
         monitoring: SubTasks,
-        checks: SubTasks,
         actions: SubTasks,
+        checks: SubTasks,
     ):
         self._delays = delays
         self._setups = setups
         self._monitoring = monitoring
-        self._checks = checks
         self._actions = actions
+        self._checks = checks
 
-    def execute(self, context: CaseContext) -> None:
-        self._setups.execute_for(context)
-        with self._monitoring.monitor(context):
-            self._delays.wait_before_actions()
-            self._actions.execute_for(context)
-        self._checks.execute_for(context)
+    async def execute(self, context: CaseContext) -> None:
+        if context.first_case_executed:
+            await self._delays.wait_between_cases()
 
-    def wait_between_cases(self) -> None:
-        self._delays.wait_between_cases()
+        logger.info(f"Starting case {context.case.identifier}")
+
+        await self._setups.execute(context)
+        async with self._monitoring.monitor(context):
+            await self._delays.wait_before_actions()
+            await self._actions.execute(context)
+            context.notify_actions_ended()
+        await self._checks.execute(context)
+
+        logger.info(f"Finished case {context.case.identifier}")
 
     @classmethod
-    def from_config(cls, context: Context) -> Self:
+    def create(cls, context: Context) -> Self:
+        config = context.config_loader.from_dict(Case.Config, context.config_raw)
+        builder = SubTasksBuilder(context.config_loader, context.results)
         return cls(
-            delays=CaseDelays.from_config("case", "delays", config=context.config_root),
-            setups=SubTasks.from_config("case", "setups", context=context),
-            checks=SubTasks.from_config("case", "checks", context=context),
-            monitoring=SubTasks.from_config("case", "monitoring", context=context),
-            actions=SubTasks.from_config("case", "actions", context=context),
+            delays=CaseDelays.from_config(config.delays),
+            setups=builder.build("setups", config.setups),
+            monitoring=builder.build("monitoring", config.monitoring),
+            actions=builder.build("actions", config.actions),
+            checks=builder.build("checks", config.checks),
         )

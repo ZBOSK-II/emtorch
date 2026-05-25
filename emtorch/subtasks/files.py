@@ -6,63 +6,45 @@
 Module holding sub-tasks related to files.
 """
 
-import logging
-from typing import Self
+import asyncio
+from typing import Annotated
 
-from ..config import Config
-from ..context import CaseContext
+from ..config import Doc, configclass
 from ..context.template import Template
-from ..io.streams import StreamWriter
-from .subtask import BasicSubTask
+from . import BasicSubTask, SubTaskContext
 
 
 class FileWriter(BasicSubTask):
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def __init__(
-        self,
-        name: str,
-        path: Template,
-        append: bool,
-        lines: list[Template],
-        encoding: str,
-    ):
-        super().__init__(name, logging.getLogger(__name__))
+    """
+    Writes specified contents to a selected file.
+    """
 
-        self._path = path
-        self._lines = lines
-        self._append = append
-        self._encoding = encoding
-        self._writer: None | StreamWriter = None
+    @configclass
+    class Config:
+        path: Annotated[Template, Doc("path to the file to save")]
+        append: Annotated[
+            bool, Doc("if true appends to the file, overwrite it otherwise")
+        ] = False
+        contents: Annotated[Template, Doc("contents of the file to write")]
+        encoding: Annotated[str, Doc("enccoding of the file")] = "utf-8"
 
-        self._context: CaseContext | None = None
+    def __init__(self, config: Config):
+        self._config = config
 
-    def basic_start(self, context: CaseContext) -> bool:
-        self._context = context
-        return True
-
-    def finish(self) -> BasicSubTask.Result:
-        assert self._context
-
-        lines = [line.evaluate(self._context) for line in self._lines]
-        data = "\n".join(lines).encode(self._encoding)
-
-        path = self._path.evaluate(self._context)
-
+    def _write_to_file(
+        self, path: str, contents: str, context: SubTaskContext
+    ) -> BasicSubTask.Result:
         try:
             with open(path, "wb") as file:
-                file.write(data)
+                file.write(contents.encode(self._config.encoding))
         except IOError as ex:
-            self.logger.error(f"File write error: {ex}")
+            context.logger.error(f"File write error: {ex}")
             return self.Result.ERROR
 
         return self.Result.SUCCESS
 
-    @classmethod
-    def from_config(cls, name: str, config: Config) -> Self:
-        return cls(
-            name=name,
-            path=Template(config.get_str("path")),
-            append=config.get_bool("append", fallback=False),
-            lines=[Template(line) for line in config.get_str_list("lines")],
-            encoding=config.get_str("encoding", fallback="utf-8"),
-        )
+    async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
+        path = self._config.path.evaluate(context.parent)
+        contents = self._config.contents.evaluate(context.parent)
+        result = await asyncio.to_thread(self._write_to_file, path, contents, context)
+        return result

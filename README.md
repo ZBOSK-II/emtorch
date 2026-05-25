@@ -259,6 +259,7 @@ Available task types:
       - `value` - (string) name for the value to store
       - `pattern` - (string) regular expression containing named
          group `value` used to extract the value
+         (e.g. `prefix=(?P<value>\\d+)`)
       - `subtask` - (string) subtask which logs should be
          scanned
   * `logger-float-matcher` - scans logs for a pattern and
@@ -267,6 +268,7 @@ Available task types:
       - `value` - (string) name for the value to store
       - `pattern` - (string) regular expression containing named
          group `value` used to extract the value
+         (e.g. `prefix=(?P<value>\\d+.\\d+)`)
       - `subtask` - (string) subtask which logs should be
          scanned
     Arguments:

@@ -9,11 +9,13 @@ Module representing value collector.
 from typing import Self
 
 from ...case.instance import CaseId
-from ...context import Context
+from ...results import Results
 from . import TypedValue
 
+type SupportedCollectorTypes = int | float
 
-class Collector[T: (int | float)]:
+
+class Collector[T: SupportedCollectorTypes]:
 
     def __init__(self, value: TypedValue[T]):
         self._value = value
@@ -31,7 +33,7 @@ class Collector[T: (int | float)]:
         return self._current_value is not None
 
     @classmethod
-    def create(cls, name: str, context: Context) -> Self:
+    def create(cls, name: str, results: Results) -> Self:
         value = TypedValue[T]()
-        context.results.register_value(name, value)
+        results.register_value(name, value)
         return cls(value)

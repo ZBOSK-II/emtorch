@@ -6,150 +6,124 @@
 Module representing SFTP operation as sub-tasks.
 """
 
-import logging
+import asyncio
 from abc import abstractmethod
-from threading import Thread
-from typing import Callable, Self
+from typing import Annotated
 
-import paramiko
+import asyncssh
 
-from ..config import Config
-from ..context import CaseContext
+from ..config import Doc, configclass
+from ..config.ssh import ConnectionConfig
 from ..context.template import Template
-from ..ssh import ConnectionConfig
-from ..ssh.client import open_ssh
-from .subtask import BasicSubTask
+from . import BasicSubTask, SubTaskContext
 
 
-# pylint: disable=too-many-instance-attributes
 class SftpTask(BasicSubTask):
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def __init__(
-        self,
-        name: str,
-        connection_config: ConnectionConfig,
-        local_path: str,
-        remote_path: str,
-        timeout: float,
-    ):
-        super().__init__(name, logging.getLogger(__name__))
-        self.connection_config = connection_config
-        self.local_path = Template(local_path)
-        self.remote_path = Template(remote_path)
-        self.timeout = timeout
-        self._ssh: None | paramiko.SSHClient = None
-        self._sftp: None | paramiko.SFTPClient = None
-        self._thread: None | Thread
-        self._finished = False
+    @configclass
+    class Config:
+        local_path: Annotated[
+            Template, Doc("path to the local file used in SFTP transfer")
+        ]
+        remote_path: Annotated[
+            Template, Doc("path to the remote file used in SFTP transfer")
+        ]
+        connection: Annotated[ConnectionConfig, Doc("SFTP connection config")]
+        timeout: Annotated[float, Doc("operation timeout")] = 5
 
-    def basic_start(self, context: CaseContext) -> bool:
-        if not self.__open_ssh():
-            return False
-
-        def action() -> None:
-            try:
-                self.perform_action(
-                    self.local_path.evaluate(context),
-                    self.remote_path.evaluate(context),
-                )
-                self._finished = True
-            except Exception as ex:  # pylint: disable=broad-exception-caught
-                self.logger.error(f"Failed to complete SFTP transfer: {ex}")
-
-        self._thread = Thread(target=action)
-        self._thread.start()
-        return True
-
-    def __open_ssh(self) -> bool:
-        try:
-            self._ssh = open_ssh(self.connection_config)
-            self._sftp = self._ssh.open_sftp()
-            return True
-        except Exception as ex:  # pylint: disable=broad-exception-caught
-            self.logger.error(f"Failed to open SSH connection: {ex}")
-            if self._sftp is not None:
-                self._sftp.close()
-                if self._ssh is not None:
-                    self._ssh.close()
-                self._sftp = None
-                self._ssh = None
-            return False
+    def __init__(self, config: Config):
+        self._config = config
 
     @abstractmethod
-    def perform_action(self, local_path: str, remote_path: str) -> None:
+    async def perform_operation(
+        self,
+        sftp: asyncssh.sftp.SFTPClient,
+        local_path: str,
+        remote_path: str,
+        context: SubTaskContext,
+    ) -> None:
         pass
 
-    def finish(self) -> BasicSubTask.Result:
-        assert self._sftp
-        assert self._ssh
-        assert self._thread
+    @property
+    @abstractmethod
+    def dir_infix(self) -> str:
+        pass
 
-        self._thread.join(self.timeout)
+    async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
+        local_path = self._config.local_path.evaluate(context.parent)
+        remote_path = self._config.remote_path.evaluate(context.parent)
 
-        timed_out = self._thread.is_alive()
-
-        self._sftp.close()
-        self._ssh.close()
-
-        self._thread.join()
-
-        if self._finished:
-            return self.Result.SUCCESS
-        if timed_out:
-            self.logger.error("SFTP transfer timed-out")
+        try:
+            async with self._config.connection.open() as conn:
+                async with conn.start_sftp_client() as sftp:
+                    await asyncio.wait_for(
+                        self.perform_operation(sftp, local_path, remote_path, context),
+                        timeout=self._config.timeout,
+                    )
+        except asyncssh.misc.Error as ex:
+            context.logger.error(
+                f"Transfer ({local_path} {self.dir_infix} {remote_path}) failed: {ex}"
+            )
+            return self.Result.ERROR
+        except TimeoutError:
+            context.logger.warning(
+                f"Transfer ({local_path} {self.dir_infix} {remote_path}) timed out"
+            )
             return self.Result.TIMEOUT
-        return self.Result.ERROR
 
-    def create_callback(self, infix: str) -> Callable[[int, int], None]:
-        def callback(current: int, total: int) -> None:
-            self.logger.info(
-                f"{self.local_path} {infix} {self.remote_path}: {current} of {total} bytes"
+        return self.Result.SUCCESS
+
+    def make_progress_handler(
+        self, context: SubTaskContext
+    ) -> asyncssh.sftp.SFTPProgressHandler:
+        def progress_handler(src: bytes, dst: bytes, uploaded: int, total: int) -> None:
+            context.logger.info(
+                f"{src!r} {self.dir_infix} {dst!r} ({uploaded} / {total} bytes)"
             )
 
-        return callback
+        return progress_handler
 
 
-class SftpUpload(SftpTask):
-    def perform_action(self, local_path: str, remote_path: str) -> None:
-        assert self._sftp
-        self.logger.info(f"SFTP PUT {local_path} -> {remote_path}")
-        self._sftp.put(
-            localpath=local_path,
+class SftpPut(SftpTask):
+    """
+    Uploads file using SFTP.
+    """
+
+    async def perform_operation(
+        self,
+        sftp: asyncssh.sftp.SFTPClient,
+        local_path: str,
+        remote_path: str,
+        context: SubTaskContext,
+    ) -> None:
+        await sftp.put(
+            localpaths=local_path,
             remotepath=remote_path,
-            callback=self.create_callback("->"),
+            progress_handler=self.make_progress_handler(context),
         )
 
-    @classmethod
-    def from_config(cls, name: str, config: Config) -> Self:
-        return cls(
-            name=name,
-            connection_config=ConnectionConfig.from_config(
-                config.section("connection")
-            ),
-            remote_path=config.get_str("remote_path"),
-            local_path=config.get_str("local_path"),
-            timeout=config.get_float("timeout"),
-        )
+    @property
+    def dir_infix(self) -> str:
+        return "->"
 
 
-class SftpDownload(SftpTask):
-    def perform_action(self, local_path: str, remote_path: str) -> None:
-        assert self._sftp
-        self.logger.info(f"SFTP GET {local_path} <- {remote_path}")
-        self._sftp.get(
+class SftpGet(SftpTask):
+    """
+    Downloads file using SFTP.
+    """
+
+    async def perform_operation(
+        self,
+        sftp: asyncssh.sftp.SFTPClient,
+        local_path: str,
+        remote_path: str,
+        context: SubTaskContext,
+    ) -> None:
+        await sftp.get(
             localpath=local_path,
-            remotepath=remote_path,
-            callback=self.create_callback("<-"),
+            remotepaths=remote_path,
+            progress_handler=self.make_progress_handler(context),
         )
 
-    @classmethod
-    def from_config(cls, name: str, config: Config) -> Self:
-        return cls(
-            name=name,
-            connection_config=ConnectionConfig.from_config(
-                config.section("connection")
-            ),
-            remote_path=config.get_str("remote_path"),
-            local_path=config.get_str("local_path"),
-            timeout=config.get_float("timeout"),
-        )
+    @property
+    def dir_infix(self) -> str:
+        return "<-"

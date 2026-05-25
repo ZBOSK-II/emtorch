@@ -6,18 +6,18 @@
 CoAP - Constrained Application Protocol support module.
 """
 
-import logging
-from enum import StrEnum, auto
-from typing import Self
+from __future__ import annotations
 
-from ..config import Config
-from ..context import CaseContext, Context
+import asyncio
+from dataclasses import dataclass
+from enum import StrEnum, auto
+from typing import Annotated
+
+from ..config import Doc, configclass
+from ..config.net import NetworkAddress
 from ..delay import Delay
-from ..io import IOLoop, SendQueue
-from ..io.net import NetworkAddress
-from ..io.sockets import UdpClientSocket
-from ..subtasks.subtask import SubTask, TypedSubTask
-from .validator import Validator
+from ..subtasks import LoggerAdapter, SubTaskContext, TypedSubTask
+from .code import code_reports_success, code_to_string, decode_code
 
 
 class CoapMonitorResult(StrEnum):
@@ -25,88 +25,163 @@ class CoapMonitorResult(StrEnum):
     UNEXPECTED_MESSAGE_RECEIVED = auto()
 
 
-class CoapMonitor(TypedSubTask[CoapMonitorResult]):
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+class CoapProtocol(asyncio.DatagramProtocol):
+    class Result(StrEnum):
+        SUCCESS = auto()
+        ERROR = auto()
+        UNEXPECTED_ORIGIN = auto()
+        MESSAGE_TOO_SHORT = auto()
+        OPERATION_FAILURE = auto()
+        TIMEOUT = auto()
+
     def __init__(
         self,
-        name: str,
-        io: IOLoop,
-        target: NetworkAddress,
-        response_timeout: float,
-        observation_timeout: float,
+        future: asyncio.Future[CoapProtocol.Result],
+        logger: LoggerAdapter,
+        expected_ip: NetworkAddress,
     ):
-        super().__init__(name, logging.getLogger(__name__))
-        self._io = io
-        self._target = target
-        self._response_timeout = response_timeout
-        self._delay = Delay(observation_timeout, name + ".observation")
+        self._logger = logger
+        self._unexpected_messages = 0
+        self._expected_ip = expected_ip
+        self._expecting = False
+        self._result = future
 
-        self._validator: Validator | None = None
-        self._socket: UdpClientSocket | None = None
-        self._queue: SendQueue[tuple[NetworkAddress, bytes]] | None = None
+    def check_message(self, address: NetworkAddress, data: bytes) -> Result:
+        if address != self._expected_ip:
+            self._logger.warning(
+                f"Message received from unexpected origin: {address} vs {self._expected_ip}"
+            )
+            return self.Result.UNEXPECTED_ORIGIN
 
-    def start(self, context: CaseContext) -> CoapMonitorResult | SubTask.StartedType:
-        self._queue = self._io.make_queue(tuple[NetworkAddress, bytes])
-        self._validator = Validator(self._target, self._response_timeout)
-        self._socket = UdpClientSocket(self.name + ".udp", self._queue, self._validator)
-        self._io.register(self._socket)
-        return SubTask.STARTED
+        if len(data) < 2:
+            self._logger.warning("Too short message")
+            return self.Result.MESSAGE_TOO_SHORT
 
-    def finish(self) -> CoapMonitorResult:
-        assert self._socket
-        assert self._validator
-        self._delay.wait()
-        self._io.close(self._socket)
-        return (
-            CoapMonitorResult.SUCCESS
-            if self._validator.unexpected_messages == 0
-            else CoapMonitorResult.UNEXPECTED_MESSAGE_RECEIVED
+        code = decode_code(data[1])
+
+        self._logger.info(f"Received {code_to_string(code)}")
+
+        if not code_reports_success(code):
+            self._logger.warning("Operation reported as failed")
+            return self.Result.OPERATION_FAILURE
+
+        return self.Result.SUCCESS
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
+        if not self._expecting or self._result.done():
+            self.__unexpected_message()
+            return
+
+        self._result.set_result(
+            self.check_message(NetworkAddress.from_tuple(addr), data)
         )
+
+    def error_received(self, exc: Exception) -> None:
+        self._logger.error(f"Exception while processing UDP: {exc}")
+        if not self._result.done():
+            self._result.set_result(self.Result.ERROR)
+
+    def connection_made(
+        self, transport: asyncio.DatagramTransport  # type: ignore[override]
+    ) -> None:
+        self._logger.info("Connection established")
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        if exc:
+            self._logger.warning(f"Connection lost: {exc}")
+        else:
+            self._logger.info("Connection closed")
+
+    def __unexpected_message(self) -> None:
+        self._logger.warning("Message unexpected at this stage")
+        self._unexpected_messages += 1
+
+    @property
+    def unexpected_messages(self) -> int:
+        return self._unexpected_messages
+
+    @property
+    def result(self) -> asyncio.Future[CoapProtocol.Result]:
+        return self._result
+
+
+@dataclass(eq=False, frozen=True)
+class CoapConnection:
+    transport: asyncio.DatagramTransport
+    protocol: CoapProtocol
+
+
+class CoapMonitor(TypedSubTask[CoapMonitorResult]):
+    """
+    Monitors CoAP messages.
+    """
+
+    @configclass
+    class Config:
+        address: Annotated[NetworkAddress, Doc("CoAP device UDP address")]
+        observation_timeout: Annotated[float, Doc("period of time to monitor")]
+
+    def __init__(self, config: Config):
+        self._config = config
 
     @property
     def result_type(self) -> type[CoapMonitorResult]:
         return CoapMonitorResult
 
-    def send(self, data: bytes) -> None:
-        assert self._queue is not None
-        self._queue.put((self._target, data))
+    async def execute(self, context: SubTaskContext) -> CoapMonitorResult:
 
-    def wait_for_response(self) -> Validator.Result:
-        assert self._validator
-        return self._validator.wait_for_result()
+        loop = asyncio.get_running_loop()
 
-    @classmethod
-    def from_config(cls, name: str, config: Config, context: Context) -> Self:
-        result = cls(
-            name=name,
-            target=NetworkAddress.from_config(config.section("target")),
-            response_timeout=config.get_float("response_timeout"),
-            observation_timeout=config.get_float("observation_timeout"),
-            io=context.worker(IOLoop),
+        result = loop.create_future()
+
+        delay = Delay(
+            self._config.observation_timeout, context.subtask.name + ".observation"
         )
-        context.register_data(name, result)
-        return result
+
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: CoapProtocol(result, context.logger, self._config.address),
+            remote_addr=self._config.address.as_tuple(),
+        )
+
+        context.data.register(context.subtask.name, CoapConnection(transport, protocol))
+
+        try:
+            await delay.wait()
+        finally:
+            transport.close()
+
+        return (
+            CoapMonitorResult.SUCCESS
+            if protocol.unexpected_messages == 0
+            else CoapMonitorResult.UNEXPECTED_MESSAGE_RECEIVED
+        )
 
 
-class CoapSend(TypedSubTask[Validator.Result]):
-    def __init__(self, name: str, monitor: CoapMonitor):
-        super().__init__(name, logging.getLogger(__name__))
-        self._monitor = monitor
+class CoapSend(TypedSubTask[CoapProtocol.Result]):
+    """
+    Sends experiment data as CoAP message and waits for response.
+    """
 
-    def start(self, context: CaseContext) -> SubTask.StartedType:
-        self._monitor.send(context.case.data.contents)
-        return SubTask.STARTED
+    @configclass
+    class Config:
+        monitor: Annotated[str, Doc("name of a monitor task to use for sending")]
+        response_timeout: Annotated[float, Doc("timeout for the response")]
 
-    def finish(self) -> Validator.Result:
-        return self._monitor.wait_for_response()
+    def __init__(self, config: Config):
+        self._config = config
 
     @property
-    def result_type(self) -> type[Validator.Result]:
-        return Validator.Result
+    def result_type(self) -> type[CoapProtocol.Result]:
+        return CoapProtocol.Result
 
-    @classmethod
-    def from_config(cls, name: str, config: Config, context: Context) -> Self:
-        return cls(
-            name=name,
-            monitor=context.data(CoapMonitor, config.get_str("monitor")),
-        )
+    async def execute(self, context: SubTaskContext) -> CoapProtocol.Result:
+        monitor = context.data.get(CoapConnection, self._config.monitor)
+
+        monitor.transport.sendto(context.case.data.contents)
+
+        try:
+            return await asyncio.wait_for(
+                monitor.protocol.result, self._config.response_timeout
+            )
+        except TimeoutError:
+            return CoapProtocol.Result.TIMEOUT

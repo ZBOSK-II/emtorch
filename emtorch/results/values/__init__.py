@@ -33,7 +33,6 @@ class TypedValuePoint[T: (int | float)](ValuePoint):
         }
 
 
-# pylint: disable=too-few-public-methods
 class Value:
     def __init__(self) -> None:
         self._values: list[ValuePoint] = []

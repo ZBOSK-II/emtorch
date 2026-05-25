@@ -6,11 +6,8 @@
 Module representing 'delay' in experiment execution.
 """
 
+import asyncio
 import logging
-import time
-from typing import Self
-
-from .config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -21,18 +18,15 @@ class Delay:
     Forces experiment to wait for a given number of seconds.
     """
 
-    def __init__(self, value: float, *prefix: str):
-        self.value = value
-        self.prefix = prefix
+    def __init__(self, value: float, name: str):
+        self._value = value
+        self._name = name
 
+    @property
     def name(self) -> str:
-        return ".".join(self.prefix)
+        return self._name
 
-    def wait(self) -> None:
-        logger.info(f"Waiting on {self.name()} ({self.value}s)")
-        time.sleep(self.value)
-        logger.info(f"Wait on {self.name()} done")
-
-    @classmethod
-    def from_config(cls, *prefix: str, config: Config) -> Self:
-        return cls(config.get_float(*prefix), *prefix)
+    async def wait(self) -> None:
+        logger.info(f"Waiting on {self.name} ({self._value}s)")
+        await asyncio.sleep(self._value)
+        logger.info(f"Wait on {self.name} done")

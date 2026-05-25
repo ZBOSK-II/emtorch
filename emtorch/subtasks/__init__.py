@@ -6,155 +6,260 @@
 Module holding experiment building blocks - sub tasks.
 """
 
-import logging
-from contextlib import contextmanager
-from typing import Iterator, Self
+from __future__ import annotations
 
-from ..config import Config
-from ..context import CaseContext, Context
+import asyncio
+import inspect
+import logging
+from abc import ABC, abstractmethod
+from contextlib import asynccontextmanager
+from enum import StrEnum
+from importlib.metadata import entry_points
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Callable,
+    Iterable,
+    TypeAlias,
+    cast,
+)
+
+from ..case.instance import CaseInstance
+from ..config import configclass
+from ..config.loader import ConfigLoader
+from ..context import (
+    CaseContext,
+    CollectorRegistry,
+    Context,
+    DataRegistry,
+)
 from ..results import Results, SubTaskResults
-from .subtask import SubTask
+from ..results.basic import BasicResult
 
 logger = logging.getLogger(__name__)
 
-
-# pylint: disable=too-many-return-statements,too-many-locals
-def subtask_from_config(config: Config, context: Context, *prefix: str) -> SubTask:
-    task_type = config.get_str("type")
-    name = ".".join(prefix) + "." + config.get_str("name")
-    args = config.section("args")
-    match task_type:
-        case "subprocess":
-            # pylint: disable=import-outside-toplevel
-            from .subprocess import Subprocess
-
-            return Subprocess.from_config(name, args, context)
-        case "ping_stable":
-            from .ping import PingIsStable  # pylint: disable=import-outside-toplevel
-
-            return PingIsStable.from_config(name, args, context)
-        case "ping_alive":
-            from .ping import PingIsAlive  # pylint: disable=import-outside-toplevel
-
-            return PingIsAlive.from_config(name, args, context)
-        case "remote":
-            from .remote import Remote  # pylint: disable=import-outside-toplevel
-
-            return Remote.from_config(name, args)
-        case "coap_monitor":
-            # pylint: disable=import-outside-toplevel
-            from ..coap import CoapMonitor
-
-            return CoapMonitor.from_config(name, args, context)
-        case "coap_send":
-            from ..coap import CoapSend  # pylint: disable=import-outside-toplevel
-
-            return CoapSend.from_config(name, args, context)
-        case "sftp-upload":
-            from .sftp import SftpUpload  # pylint: disable=import-outside-toplevel
-
-            return SftpUpload.from_config(name, args)
-        case "sftp-download":
-            from .sftp import SftpDownload  # pylint: disable=import-outside-toplevel
-
-            return SftpDownload.from_config(name, args)
-        case "logger-int-matcher":
-            # pylint: disable=import-outside-toplevel
-            from .logger_matcher import LoggerIntMatcher
-
-            return LoggerIntMatcher.from_config(name, args, context)
-        case "logger-float-matcher":
-            # pylint: disable=import-outside-toplevel
-            from .logger_matcher import LoggerFloatMatcher
-
-            return LoggerFloatMatcher.from_config(name, args, context)
-        case "file-write":
-            # pylint: disable=import-outside-toplevel
-            from .files import FileWriter
-
-            return FileWriter.from_config(name, args)
-        case _:
-            raise ValueError(f"Unknown sub-task type '{task_type}'")
+if TYPE_CHECKING:
+    LoggerAdapter = logging.LoggerAdapter[logging.Logger]
+else:
+    LoggerAdapter = logging.LoggerAdapter
 
 
-class SubTaskExecution:
-    def __init__(self, task: SubTask, results: SubTaskResults):
-        self._task = task
+class SubTask(ABC):
+
+    @property
+    @abstractmethod
+    def result_type(self) -> type[StrEnum]:
+        pass
+
+    @abstractmethod
+    async def execute(self, context: SubTaskContext) -> str:
+        pass
+
+
+class TypedSubTask[T: StrEnum](SubTask):
+
+    @property
+    @abstractmethod
+    def result_type(self) -> type[T]:
+        pass
+
+    @abstractmethod
+    async def execute(self, context: SubTaskContext) -> T:
+        pass
+
+
+class BasicSubTask(TypedSubTask[BasicResult]):
+    Result: TypeAlias = BasicResult
+
+    @property
+    def result_type(self) -> type[Result]:
+        return self.Result
+
+    @abstractmethod
+    async def execute(self, context: SubTaskContext) -> BasicResult:
+        pass
+
+
+class SubTaskInstance:
+    @configclass
+    class Config:
+        name: str
+        type: str
+        args: dict[str, Any]
+
+    def __init__(
+        self, fullname: str, config: Config, subtask: SubTask, results: SubTaskResults
+    ):
+        self._name = fullname
+        self._config = config
+        self._subtask = subtask
         self._results = results
-        self._start_result: SubTask.StartResult | None = None
+
+        self._logger = logging.LoggerAdapter(logger, extra={"subtask": self.name})
 
     @property
     def name(self) -> str:
-        return self._task.name
+        return self._name
 
-    def start(self, context: CaseContext) -> None:
-        self._start_result = self._task.start(context)
+    @property
+    def logger(self) -> LoggerAdapter:
+        return self._logger
 
-    def finish_for(self, context: CaseContext) -> None:
-        assert self._start_result is not None
-        result = (
-            self._task.finish()
-            if isinstance(self._start_result, SubTask.StartedType)
-            else self._start_result
-        )
+    async def execute(self, context: CaseContext) -> None:
+        self.logger.info(f"Staring {self.name}")
+        subcontext = SubTaskContext(context, self)
+        result = await self._subtask.execute(subcontext)
         self._results.collect(context.case.identifier, result)
-        self._start_result = None
+        self.logger.info(f"Finished {self.name}")
 
-    def execute_for(self, context: CaseContext) -> None:
-        self.start(context)
-        self.finish_for(context)
+
+class SubTaskContext:
+
+    def __init__(self, parent: CaseContext, subtask: SubTaskInstance):
+        self._parent = parent
+        self._subtask = subtask
+
+    @property
+    def parent(self) -> CaseContext:
+        return self._parent
+
+    @property
+    def root(self) -> Context:
+        return self.parent.parent
+
+    @property
+    def subtask(self) -> SubTaskInstance:
+        return self._subtask
+
+    @property
+    def case(self) -> CaseInstance:
+        return self.parent.case
+
+    @property
+    def results(self) -> Results:
+        return self.parent.results
+
+    @property
+    def data(self) -> DataRegistry:
+        return self.parent.data
+
+    @property
+    def collectors(self) -> CollectorRegistry:
+        return self.parent.collectors
+
+    @property
+    def logger(self) -> LoggerAdapter:
+        return self.subtask.logger
+
+    async def wait_for_actions_ended(self) -> None:
+        await self.parent.wait_for_actions_ended()
 
 
 class SubTasks:
-    def __init__(self, results: Results, *prefix: str):
-        self._results = results
-        self._prefix = prefix
-        self._tasks: list[SubTaskExecution] = []
+    type Config = list[SubTaskInstance.Config]
+
+    def __init__(self, name: str, subtasks: list[SubTaskInstance]):
+        self._subtasks = subtasks
+        self._name = name
 
     @property
     def name(self) -> str:
-        return ".".join(self._prefix)
+        return self._name
 
-    def register(self, task: SubTask) -> None:
-        logger.info(f"Registering <{task.name}>")
-        execution = SubTaskExecution(
-            task,
-            self._results.register_subtask(task.name, task.result_type),
-        )
-        self._tasks.append(execution)
+    async def execute(self, context: CaseContext) -> None:
+        logger.info(f"Executing {self.name}")
 
-    def execute_for(self, context: CaseContext) -> None:
-        logger.info(f"Start {self.name}")
-        for task in self._tasks:
-            logger.info(f"Executing {task.name}")
-            task.execute_for(context)
-        logger.info(f"End {self.name}")
+        for task in self._subtasks:
+            await task.execute(context)
 
-    @contextmanager
-    def monitor(self, context: CaseContext) -> Iterator[None]:
-        try:
-            self.start_all(context)
-            yield
-        finally:
-            self.finish_all_for(context)
+        logger.info(f"Finished {self.name}")
 
-    def start_all(self, context: CaseContext) -> None:
+    @asynccontextmanager
+    async def monitor(self, context: CaseContext) -> AsyncIterator[None]:
         logger.info(f"Starting {self.name}")
-        for task in self._tasks:
-            logger.info(f"Starting {task.name}")
-            task.start(context)
-        logger.info(f"All {self.name} started")
+        async with asyncio.TaskGroup() as group:
+            for task in self._subtasks:
+                group.create_task(task.execute(context))
+            yield
+        logger.info(f"Finished {self.name}")
 
-    def finish_all_for(self, context: CaseContext) -> None:
-        logger.info(f"Finishing {self.name}")
-        for task in self._tasks:
-            logger.info(f"Finishing {task.name}")
-            task.finish_for(context)
-        logger.info(f"All {self.name} finished")
 
-    @classmethod
-    def from_config(cls, *prefix: str, context: Context) -> Self:
-        tasks = cls(context.results, *prefix)
-        for conf in context.config_root.get_config_list(*prefix):
-            tasks.register(subtask_from_config(conf, context, *prefix))
-        return tasks
+class SubTasksLibrary:
+    type ConfigClass = Any
+    type SubTaskEntry = tuple[type[SubTask], ConfigClass]
+
+    def __init__(self) -> None:
+        self._entries = {e.name: e for e in entry_points(group="emtorch.subtasks")}
+        self._cache: dict[str, SubTasksLibrary.SubTaskEntry] = {}
+
+    def names(self) -> Iterable[str]:
+        return self._entries.keys()
+
+    def get(self, name: str) -> SubTaskEntry:
+        if subtask := self._cache.get(name):
+            return subtask
+
+        entry = self._entries.get(name)
+        if entry is None:
+            raise KeyError(f"Unknown subtask type '{name}'")
+
+        cls = entry.load()
+
+        if (
+            not issubclass(cls, SubTask)
+            or not hasattr(cls, "Config")
+            or not inspect.isclass(cls.Config)
+        ):
+            raise RuntimeError(
+                f"Type registered as '{name}' is not a proper Emtorch subtask"
+            )
+
+        config = cls.Config
+        self._cache[name] = (cls, cls.Config)
+        return cast(type[SubTask], cls), config
+
+
+class SubTaskFactoryCache:
+    type Factory = Callable[[dict[str, Any]], SubTask]
+
+    def __init__(self, config_loader: ConfigLoader):
+        self._library = SubTasksLibrary()
+        self._cache: dict[str, SubTaskFactoryCache.Factory] = {}
+        self._config_loader = config_loader
+
+    def get(self, name: str) -> Factory:
+        if factory := self._cache.get(name):
+            return factory
+
+        subtask, configtype = self._library.get(name)
+
+        def new_factory(args: dict[str, Any]) -> SubTask:
+            cls = cast(Any, subtask)
+            config = self._config_loader.from_dict(configtype, args)
+            return cast(SubTask, cls(config))
+
+        factory = new_factory
+
+        self._cache[name] = factory
+
+        return factory
+
+
+class SubTasksBuilder:
+    def __init__(self, config_loader: ConfigLoader, results: Results):
+        self._factories = SubTaskFactoryCache(config_loader)
+        self._results = results
+
+    def build_subtask(
+        self, prefix: str, config: SubTaskInstance.Config
+    ) -> SubTaskInstance:
+        name = prefix + "." + config.name
+        factory = self._factories.get(config.type)
+        subtask = factory(config.args)
+        subresults = self._results.register_subtask(name, subtask.result_type)
+        return SubTaskInstance(name, config, subtask, subresults)
+
+    def build(self, name: str, config: SubTasks.Config) -> SubTasks:
+        subtasks = [self.build_subtask(name, c) for c in config]
+        return SubTasks(name, subtasks)

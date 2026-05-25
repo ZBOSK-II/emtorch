@@ -1,0 +1,60 @@
+[delays]
+between_cases = 0.2
+before_actions = 1
+
+[[setups]]
+type = "exec"
+name = "setup"
+
+[setups.args]
+program = "echo"
+args = ["SETUP $EMTORCH_CASE_ID"]
+
+[[setups]]
+type = "ping-alive"
+name = "ping"
+
+[setups.args]
+host = "127.0.0.1"
+timeout = 10
+interval = 1
+
+[[monitoring]]
+type = "shell"
+name = "loop"
+
+[monitoring.args]
+cmd = "while true; do echo looping; sleep 1; done"
+timeout = 5
+signal = "SIGKILL"
+
+[[actions]]
+type = "shell"
+name = "test"
+
+[actions.args]
+cmd = "cat $EMTORCH_DATA_PATH"
+
+[[actions]]
+type = "shell"
+name = "sleep"
+
+[actions.args]
+cmd = "sleep 2"
+timeout = 3
+
+[[checks]]
+type = "ping-stable"
+name = "ping"
+
+[checks.args]
+host = "127.0.0.1"
+count = 2
+interval = 1
+
+[[checks]]
+type = "shell"
+name = "teardown"
+
+[checks.args]
+cmd = "echo TEARDOWN"

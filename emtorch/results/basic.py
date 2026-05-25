@@ -11,7 +11,6 @@ from enum import StrEnum, auto
 
 class BasicResult(StrEnum):
     SUCCESS = auto()
-    NOT_STARTED = auto()
     FAILURE = auto()
     ERROR = auto()
     TIMEOUT = auto()

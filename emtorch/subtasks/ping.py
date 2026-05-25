@@ -6,149 +6,124 @@
 Module holding sub-tasks related to network "ping".
 """
 
-import logging
-import subprocess
-from typing import IO, Self
+import asyncio
+import asyncio.subprocess
+from typing import Annotated
 
-from ..config import Config
-from ..context import CaseContext, Context
-from ..io import IOLoop
-from ..io.streams import InputStream
-from .subprocess import FinishConfig, Subprocess
-
-logger = logging.getLogger(__name__)
+from ..config import Doc, configclass
+from ..context.template import Template
+from . import BasicSubTask, LoggerAdapter, SubTaskContext
+from .subprocess import Exec, stream_logger
 
 
-class PingIsAliveStream(InputStream):
-    def __init__(self, name: str, stream: IO[bytes], process: subprocess.Popen[bytes]):
-        super().__init__(name, stream)
+async def detect_ping_is_alive(
+    process: asyncio.subprocess.Process,
+    logger: LoggerAdapter,
+    reader: asyncio.StreamReader | None,
+) -> BasicSubTask.Result:
+    assert reader
 
-        self.header = b""
-        self.header_done = False
-        self.response_received = False
+    header = await reader.readline()
+    logger.info(f"{header!r}")
 
-        self.process = process
+    response_received = False
 
-    def read(self) -> None:
-        char = self.stream.read(1)
+    while not reader.at_eof():
+        char = await reader.read(1)
         if len(char) == 0:
-            self.mark_eof()
-            return
-        if self.header_done:
-            match char:
-                case b"\b":
-                    if not self.response_received:
-                        self.logger.info("Response received")
-                    self.response_received = True
-                case b".":
-                    if self.response_received:
-                        self.logger.info("Ping received")
-                        # if process finishes before external timeout - it will be a success
-                        self.process.terminate()
-                    else:
-                        self.logger.info("Ping")
-                case b"E":
-                    self.logger.warning("Error response")
-                    self.response_received = False
-        else:
-            if char == b"\n":
-                self.logger.info(f"{self.header!r}")
-                self.header_done = True
-            else:
-                self.header += char
+            break
+
+        match char:
+            case b"\b":
+                if not response_received:
+                    logger.info("Response received")
+                response_received = True
+            case b".":
+                if response_received:
+                    logger.info("Ping received")
+                    process.terminate()
+                else:
+                    logger.info("Ping")
+            case b"E":
+                logger.warning("Error response")
+                response_received = False
+
+    return (
+        BasicSubTask.Result.SUCCESS
+        if response_received
+        else BasicSubTask.Result.FAILURE
+    )
 
 
-class PingIsAlive(Subprocess):
+class PingIsAlive(BasicSubTask):
     """
-    Waits for first ping response (up to timeout).
+    Uses 'ping' to check if given network end point is responding (is alive).
     """
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def __init__(self, name: str, host: str, interval: int, timeout: float, io: IOLoop):
+    @configclass
+    class Config:
+        host: Annotated[str, Doc("host to be checked")]
+        timeout: Annotated[float, Doc("timeout to wait for any response")]
+        interval: Annotated[int, Doc("interval between pings")]
 
-        super().__init__(
-            name=name,
-            finish_config=FinishConfig(timeout, None),
+    def __init__(self, config: Config):
+        self._config = config
+
+    async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
+        context.logger.info(f"Starting ping-is-alive {self._config.host}")
+
+        proc = await asyncio.create_subprocess_exec(
+            "ping",
+            "-f",
+            "-i",
+            str(self._config.interval),
+            self._config.host,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        try:
+            result, _, _ = await asyncio.gather(
+                asyncio.create_task(
+                    detect_ping_is_alive(proc, context.logger, proc.stdout)
+                ),
+                asyncio.wait_for(proc.wait(), self._config.timeout),
+                asyncio.create_task(
+                    stream_logger("STDERR", context.logger, proc.stderr)
+                ),
+            )
+        except TimeoutError:
+            context.logger.warning("Ping timed out")
+            return self.Result.TIMEOUT
+
+        return result
+
+
+class PingIsStable(Exec):
+    """
+    Uses 'ping' to check if given network end point is stable responding.
+    """
+
+    @configclass
+    class Config:
+        host: Annotated[str, Doc("host to be checked")]
+        count: Annotated[int, Doc("number of pings to be sent")]
+        interval: Annotated[int, Doc("interval between pings")]
+
+    def __init__(self, config: Config):
+        timeout = (config.count + 1) * config.interval
+        base_config = Exec.Config(
+            program=Template("ping"),
             args=[
-                "ping",
-                "-f",
-                "-i",
-                str(interval),
-                host,
+                Template(arg)
+                for arg in [
+                    "-c",
+                    str(config.count),
+                    "-i",
+                    str(config.interval),
+                    config.host,
+                ]
             ],
-            shell=False,
-            io=io,
-            check_exit_code=False,
-            subtask_logger=logger,
+            timeout=timeout,
         )
-
-        self.stream: PingIsAliveStream | None = None
-
-    def basic_start(self, context: CaseContext) -> bool:
-        if not super().basic_start(context):
-            return False
-
-        assert self.process is not None
-        assert self.process.stdout is not None
-
-        self.stream = PingIsAliveStream(self.name, self.process.stdout, self.process)
-        self.io.register(self.stream)  # overrides registration done by parent
-
-        return True
-
-    def finish(self) -> Subprocess.Result:
-        if super().finish() == Subprocess.Result.ERROR:
-            return Subprocess.Result.ERROR
-        assert self.stream is not None
-        return (
-            Subprocess.Result.SUCCESS
-            if self.stream.response_received
-            else Subprocess.Result.FAILURE
-        )
-
-    @classmethod
-    def from_config(cls, name: str, config: Config, context: Context) -> Self:
-        return cls(
-            name=name,
-            host=config.get_str("host"),
-            timeout=config.get_float("timeout"),
-            interval=config.get_int("interval"),
-            io=context.worker(IOLoop),
-        )
-
-
-class PingIsStable(Subprocess):
-    """
-    Executes `count` pings and expects replies from all of them.
-    """
-
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def __init__(self, name: str, host: str, count: int, interval: int, io: IOLoop):
-        timeout = (count + 1) * interval
-        super().__init__(
-            name=name,
-            finish_config=FinishConfig(timeout, None),
-            args=[
-                "ping",
-                "-c",
-                str(count),
-                "-i",
-                str(interval),
-                "-w",
-                str(timeout),
-                host,
-            ],
-            shell=False,
-            io=io,
-            subtask_logger=logger,
-        )
-
-    @classmethod
-    def from_config(cls, name: str, config: Config, context: Context) -> Self:
-        return cls(
-            name=name,
-            host=config.get_str("host"),
-            count=config.get_int("count"),
-            interval=config.get_int("interval"),
-            io=context.worker(IOLoop),
-        )
+        super().__init__(base_config)

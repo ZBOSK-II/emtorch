@@ -13,7 +13,6 @@ from enum import StrEnum
 from typing import Any, Collection, Mapping
 
 from ..case.instance import CaseId
-from ..config import Config
 from ..version import VERSION
 from .values import Value
 
@@ -57,7 +56,7 @@ class SubTaskResults:
 
 class Results:
 
-    def __init__(self, config: Config):
+    def __init__(self, config: dict[str, Any]):
         self.subtasks: dict[str, SubTaskResults] = {}
         self.values: dict[str, Value] = {}
         self.cases: list[str] = []
@@ -65,7 +64,7 @@ class Results:
         self.info = {
             "version": VERSION,
             "args": " ".join(sys.argv[1:]),
-            "config": config.to_dict(),
+            "config": config,
             "start": self.__iso_timestamp(),
         }
 

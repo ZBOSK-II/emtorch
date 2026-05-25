@@ -6,32 +6,35 @@
 Main module of the application.
 """
 
+import asyncio
 import json
 import logging
+from typing import Any
 
 from .arguments import Arguments
 from .case import Case
 from .case.instance import CaseInstance
-from .config import Config
 from .context import Context
 from .results import Results
 
 logger = logging.getLogger(__name__)
 
 
-def execute(args: Arguments, config: Config) -> Results:
-    with Context(config) as context:
-        case = Case.from_config(context)
+def execute(args: Arguments, config: dict[str, Any]) -> Results:
+    with asyncio.Runner() as runner:
+        runner.get_loop().set_task_factory(asyncio.eager_task_factory)
 
-        for instance in CaseInstance.list_from(args):
-            with context.enter_case(instance) as case_context:
-                case.execute(case_context)
-            case.wait_between_cases()
+        with Context(config) as context:
+            case = Case.create(context)
 
-        return context.results
+            for instance in CaseInstance.list_from(args):
+                with context.enter_case(instance) as case_context:
+                    runner.run(case.execute(case_context))
+
+            return context.results
 
 
-def run(args: Arguments, config: Config) -> int:
+def run(args: Arguments, config: dict[str, Any]) -> int:
     results = execute(args, config)
 
     logger.info(f"Results:\n{results.summary()}")
