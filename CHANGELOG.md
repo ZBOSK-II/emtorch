@@ -27,8 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - `sftp-download` and `sftp-upload` subtasks for SFTP operations
 
 ### Dependencies updated
- - mypy bump from 1.20.1 to 2.0.0 [\#53](https://github.com/ZBOSK-II/emtorch/pull/53) [\#55](https://github.com/ZBOSK-II/emtorch/pull/55) ([dependabot](https://github.com/dependabot))
- - types-paramiko bump from 4.0.0.20260408 to 4.0.0.20260508 [\#56](https://github.com/ZBOSK-II/emtorch/pull/56) ([dependabot](https://github.com/dependabot))
+ - mypy bump from 1.20.1 to 2.1.0 [\#53](https://github.com/ZBOSK-II/emtorch/pull/53) [\#55](https://github.com/ZBOSK-II/emtorch/pull/55) [\#59](https://github.com/ZBOSK-II/emtorch/pull/59) ([dependabot](https://github.com/dependabot))
+ - types-paramiko bump from 4.0.0.20260408 to 4.0.0.20260518 [\#56](https://github.com/ZBOSK-II/emtorch/pull/56) [\#60](https://github.com/ZBOSK-II/emtorch/pull/60) ([dependabot](https://github.com/dependabot))
+ - black bump from 26.3.1 to 26.5.1 [\#62](https://github.com/ZBOSK-II/emtorch/pull/62) ([dependabot](https://github.com/dependabot))
  - paramiko bump from 3.5.1 to 5.0.0
 
 
