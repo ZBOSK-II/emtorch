@@ -285,3 +285,4 @@ supported. Use `$$` to escape `$` character.
 Keywords available in $-strings:
  * `EMTORCH_CASE_ID` - unique identifier of the current case
  * `EMTORCH_DATA_PATH` - path to the case data
+ * `EMTORCH_DATA_FILENAME` - file name of the case data

@@ -20,4 +20,5 @@ class Template(StringTemplate):
         return self.safe_substitute(
             EMTORCH_CASE_ID=context.case.identifier.unique,
             EMTORCH_DATA_PATH=str(context.case.data.path),
+            EMTORCH_DATA_FILENAME=context.case.data.path.name,
         )

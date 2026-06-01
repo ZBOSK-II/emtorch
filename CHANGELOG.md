@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - `--repeats` argument will allow to repeat test cases for each data specified number of times
  - `--repeat-mode` argument will allow to select order of repetition (abc * 2 -> aabbcc or abcabc)
- - `EMTORCH_DATA_PATH` environment variable added to subprocess calls (contains path to current case data)
+ - `EMTORCH_DATA_PATH` environment variable added to $-strings templates (contains path to current case data)
+ - `EMTORCH_DATA_FILENAME` environment variable added to $-strings templates  (contains file name of the current case data)
  - `sftp-download` and `sftp-upload` subtasks for SFTP operations
 
 ### Dependencies updated
