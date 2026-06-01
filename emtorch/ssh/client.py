@@ -15,7 +15,7 @@ def open_ssh(config: ConnectionConfig) -> paramiko.SSHClient:
     try:
         client = paramiko.SSHClient()
         client.load_system_host_keys()
-        client.set_missing_host_key_policy(paramiko.RejectPolicy())
+        client.set_missing_host_key_policy(paramiko.WarningPolicy())
         client.connect(
             config.host,
             config.port,
