@@ -277,6 +277,15 @@ Available task types:
       - `encoding` - (string) file encoding (default: utf-8)
       - `timeout` - (float) time required to write to the
          file in seconds (default: 5)
+  * `file-write` - writes to a file
+    Arguments:
+      - `path` - ($-string) path to the file to save
+      - `append` - (boolean) if true appends to file,
+        overwrites otherwise (default: false)
+      - `lines` - (list of $-strings) lines to write to the
+        target file
+      - `encoding` - (string) encoding of the file (default:
+         utf-8)
 
 $-strings in arguments allow for interpolation of `$KEYWORD`
 inside passed string. Both `$KEYWORD` and `${KEYWORD}` are

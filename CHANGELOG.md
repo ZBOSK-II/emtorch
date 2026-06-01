@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - `EMTORCH_DATA_PATH` environment variable added to $-strings templates (contains path to current case data)
  - `EMTORCH_DATA_FILENAME` environment variable added to $-strings templates  (contains file name of the current case data)
  - `sftp-download` and `sftp-upload` subtasks for SFTP operations
+ - `file-write` for writing to files
 
 ### Dependencies updated
  - mypy bump from 1.20.1 to 2.1.0 [\#53](https://github.com/ZBOSK-II/emtorch/pull/53) [\#55](https://github.com/ZBOSK-II/emtorch/pull/55) [\#59](https://github.com/ZBOSK-II/emtorch/pull/59) ([dependabot](https://github.com/dependabot))

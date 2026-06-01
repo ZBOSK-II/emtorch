@@ -72,7 +72,7 @@ def subtask_from_config(config: Config, context: Context, *prefix: str) -> SubTa
             # pylint: disable=import-outside-toplevel
             from .files import FileWriter
 
-            return FileWriter.from_config(name, args, context)
+            return FileWriter.from_config(name, args)
         case _:
             raise ValueError(f"Unknown sub-task type '{task_type}'")
 
