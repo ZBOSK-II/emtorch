@@ -1,11 +1,10 @@
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [project]
 name = "emtorch"
 description="Experiments orchestrator for embedded systems"
-version = "0.0.0"  # set by poetry
 requires-python = ">= 3.13"
 dependencies = [
   "paramiko==5.0.0",
@@ -36,6 +35,7 @@ classifiers = [
   "Topic :: Software Development :: Embedded Systems",
   "Topic :: Software Development :: Testing",
 ]
+dynamic = ["version"]
 
 [project.urls]
 GitHub="https://github.com/ZBOSK-II/emtorch"
@@ -47,14 +47,11 @@ emtorch = "emtorch.__main__:main"
 [tool.poetry]
 packages = [{include = "emtorch"}]
 requires-poetry = ">=2.1.2"
+version = "0.0.0"
 
 [tool.poetry.requires-plugins]
-poetry-git-version-plugin = ">=2.0.1"
+poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
 poetry-plugin-export = ">=1.9"
-
-[tool.poetry-git-version-plugin]
-release_type = "dev"
-local = true
 
 [tool.poetry.group.dev]
 optional = true
@@ -124,3 +121,8 @@ skip = "poetry.lock,*.pyc"
 check-filenames = true
 count = true
 quiet = 0
+
+[tool.poetry-dynamic-versioning]
+enable = true
+pattern = "default-unprefixed"
+style = "semver"
