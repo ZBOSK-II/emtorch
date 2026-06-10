@@ -104,4 +104,4 @@ class CaseInstance:
                 raise ValueError(f"Unsupported repeat mode: {args.repeat_mode!r}")
 
         id_builder = CaseId.builder_from(args)
-        return [CaseInstance(id_builder(d.identifier, i), d) for d, i in pairs]
+        return [CaseInstance(id_builder(d.identifier, i + 1), d) for d, i in pairs]

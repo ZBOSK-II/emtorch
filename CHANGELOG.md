@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unrelease]
 
+### Changed
+ - Case instances identifiers will start from 1 and not 0.
 
 
 ## [2.1.2] - 2026-06-01
