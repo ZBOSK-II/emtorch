@@ -63,7 +63,7 @@ class CaseId:
 
     @staticmethod
     def builder_from(args: Arguments) -> Callable[[str, int], CaseId]:
-        width = max(1, len(str(args.repeats - 1)))
+        width = max(1, len(str(args.repeats)))
 
         def builder(group: str, iteration: int) -> CaseId:
             return CaseId(f"{group}[{iteration:0{width}}]", group, iteration)

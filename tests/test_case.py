@@ -62,7 +62,7 @@ def test_repeats_repeat_identifiers() -> None:
 
     cases = CaseInstance.list_from(args)
 
-    assert _cases_ids(cases) == ["a[0]", "a[1]", "b[0]", "b[1]", "c[0]", "c[1]"]
+    assert _cases_ids(cases) == ["a[1]", "a[2]", "b[1]", "b[2]", "c[1]", "c[2]"]
     assert _data_ids(cases) == ["a", "a", "b", "b", "c", "c"]
 
 
@@ -73,7 +73,7 @@ def test_repeats_respects_mode() -> None:
 
     cases = CaseInstance.list_from(args)
 
-    assert _cases_ids(cases) == ["a[0]", "b[0]", "c[0]", "a[1]", "b[1]", "c[1]"]
+    assert _cases_ids(cases) == ["a[1]", "b[1]", "c[1]", "a[2]", "b[2]", "c[2]"]
     assert _data_ids(cases) == ["a", "b", "c", "a", "b", "c"]
 
 
@@ -83,8 +83,8 @@ def test_repeats_handles_large_number() -> None:
 
     cases = CaseInstance.list_from(args)
 
-    assert _cases_ids(cases)[0] == "a[000]"
-    assert _cases_ids(cases)[-1] == "c[199]"
+    assert _cases_ids(cases)[0] == "a[001]"
+    assert _cases_ids(cases)[-1] == "c[200]"
 
 
 def test_repeats_handles_large_number_edge_case() -> None:
@@ -93,5 +93,5 @@ def test_repeats_handles_large_number_edge_case() -> None:
 
     cases = CaseInstance.list_from(args)
 
-    assert _cases_ids(cases)[0] == "a[000]"
-    assert _cases_ids(cases)[-1] == "c[999]"
+    assert _cases_ids(cases)[0] == "a[0001]"
+    assert _cases_ids(cases)[-1] == "c[1000]"
