@@ -100,7 +100,8 @@ This will execute the configuration against the test data and
 output results in JSON format.
 
 For a comprehensive configuration example, see `default-config.toml`
-in the repository. 
+in the repository. For detailed configuration documentation, see
+[Configuration Guide](docs/configuration-guide.md).
 
 Experiment Lifecycle
 ------------------------------------------------------------
@@ -162,6 +163,9 @@ count = 3
 interval = 1
 ```
 
+For complete configuration documentation, see the
+[Configuration Guide](docs/configuration-guide.md).
+
 Template Variables
 ------------------------------------------------------------
 Configuration values support **$-string interpolation** using
@@ -209,6 +213,20 @@ has a type, name, and type-specific arguments.
 **For detailed subtask documentation:**
 - Run `emtorch subtasks` to list all available subtasks
 - Run `emtorch subtask <NAME>` to see documentation for a specific subtask
+- See [Subtasks Reference](docs/subtasks/index.md) for complete documentation
+
+Documentation
+------------------------------------------------------------
+Comprehensive documentation is available in the `docs/` directory:
+
+- [Getting Started](docs/getting-started.md) - Installation and first steps
+- [Core Concepts](docs/core-concepts.md) - Understanding experiments and phases
+- [CLI Reference](docs/cli-reference.md) - Command-line interface documentation
+- [Configuration Guide](docs/configuration-guide.md) - TOML configuration details
+- [Subtasks Reference](docs/subtasks/index.md) - Complete subtask documentation
+- [Examples & Tutorials](docs/examples/) - Practical walkthroughs
+- [Developer Guide](docs/developer-guide.md) - Creating custom subtasks
+- [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
 
 Project Information
 ------------------------------------------------------------
