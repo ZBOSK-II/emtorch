@@ -107,7 +107,7 @@ class SubTaskInstance:
         return self._logger
 
     async def execute(self, context: CaseContext) -> None:
-        self.logger.info(f"Staring {self.name}")
+        self.logger.info(f"Starting {self.name}")
         subcontext = SubTaskContext(context, self)
         result = await self._subtask.execute(subcontext)
         self._results.collect(context.case.identifier, result)
