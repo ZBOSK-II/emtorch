@@ -26,7 +26,7 @@ class FileWriter(BasicSubTask):
             bool, Doc("if true appends to the file, overwrite it otherwise")
         ] = False
         contents: Annotated[Template, Doc("contents of the file to write")]
-        encoding: Annotated[str, Doc("enccoding of the file")] = "utf-8"
+        encoding: Annotated[str, Doc("encoding of the file")] = "utf-8"
 
     def __init__(self, config: Config):
         self._config = config
