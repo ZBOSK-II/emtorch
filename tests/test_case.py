@@ -16,7 +16,7 @@ def _given_data(*args: str) -> Arguments:
     return Arguments(
         data=[Path(p) for p in args],
         output_prefix="",
-        config=Path(),
+        config=Path("."),
         repeats=1,
         repeat_mode=RepeatMode.AABB,
     )
