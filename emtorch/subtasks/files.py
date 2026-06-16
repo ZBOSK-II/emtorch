@@ -39,7 +39,7 @@ class FileWriter(BasicSubTask):
             with open(path, mode) as file:
                 file.write(contents.encode(self._config.encoding))
         except IOError as ex:
-            context.logger.error(f"File write error: {ex}")
+            context.logger.error(f"Failed to write to file {path}: {ex}")
             return self.Result.ERROR
 
         return self.Result.SUCCESS
