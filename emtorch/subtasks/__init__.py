@@ -216,7 +216,7 @@ class SubTasksLibrary:
             )
 
         config = cls.Config
-        self._cache[name] = (cls, cls.Config)
+        self._cache[name] = (cls, config)
         return cast(type[SubTask], cls), config
 
 
