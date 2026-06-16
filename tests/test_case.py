@@ -16,7 +16,7 @@ def _given_data(*args: str) -> Arguments:
     return Arguments(
         data=[Path(p) for p in args],
         output_prefix="",
-        config=Path(),
+        config=Path("."),
         repeats=1,
         repeat_mode=RepeatMode.AABB,
     )
@@ -66,7 +66,7 @@ def test_repeats_repeat_identifiers() -> None:
     assert _data_ids(cases) == ["a", "a", "b", "b", "c", "c"]
 
 
-def test_repeats_respects_mode() -> None:
+def test_repeats_respects_abab_mode() -> None:
     args = _given_data("a", "b", "c")
     args.repeats = 2
     args.repeat_mode = RepeatMode.ABAB
