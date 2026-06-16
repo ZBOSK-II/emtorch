@@ -9,7 +9,12 @@ FROM python:3.14-slim-bookworm AS poetry-builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ENV POETRY_VERSION=2.3.2
+RUN apt-get update -q \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qy --no-install-recommends \
+    git=1:2.39.* \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV POETRY_VERSION=2.4.1
 ENV POETRY_VENV=/opt/poetry-venv
 
 RUN python3 -m venv ${POETRY_VENV} \
