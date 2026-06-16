@@ -19,6 +19,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    Awaitable,
     Callable,
     Iterable,
     TypeAlias,
@@ -176,12 +177,23 @@ class SubTasks:
         logger.info(f"Finished {self.name}")
 
     @asynccontextmanager
-    async def monitor(self, context: CaseContext) -> AsyncIterator[None]:
+    async def monitor(
+        self, context: CaseContext
+    ) -> AsyncIterator[Callable[[], Awaitable[None]]]:
         logger.info(f"Starting {self.name}")
         async with asyncio.TaskGroup() as group:
+            tasks = []
             for task in self._subtasks:
-                group.create_task(task.execute(context))
-            yield
+                tasks.append(group.create_task(task.execute(context)))
+
+            async def _check_failed_tasks() -> None:
+                for running_task in tasks:
+                    if running_task.done():
+                        exception = running_task.exception()
+                        if exception is not None:
+                            raise exception
+
+            yield _check_failed_tasks
         logger.info(f"Finished {self.name}")
 
 
