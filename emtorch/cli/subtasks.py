@@ -18,5 +18,7 @@ class SubTasksCommand(Command):
         print("Known Sub Tasks:\n")
         for name in sorted(library.names()):
             print("\t", name)
-        print("\nType 'emtorch args <TASK-NAME>' to get help on given tasks arguments")
+        print(
+            "\nType 'emtorch args <TASK-NAME>' to get help on the given task's arguments"
+        )
         return 0
