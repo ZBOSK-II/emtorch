@@ -83,6 +83,7 @@ def test_repeats_handles_large_number() -> None:
 
     cases = CaseInstance.list_from(args)
 
+    assert len(cases) == 600
     assert _cases_ids(cases)[0] == "a[001]"
     assert _cases_ids(cases)[-1] == "c[200]"
 
@@ -93,5 +94,6 @@ def test_repeats_handles_large_number_edge_case() -> None:
 
     cases = CaseInstance.list_from(args)
 
+    assert len(cases) == 3000
     assert _cases_ids(cases)[0] == "a[0001]"
     assert _cases_ids(cases)[-1] == "c[1000]"
