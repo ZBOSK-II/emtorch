@@ -35,9 +35,9 @@ class FileWriter(BasicSubTask):
         self, path: str, contents: str, context: SubTaskContext
     ) -> BasicSubTask.Result:
         try:
-            mode = "ab" if self._config.append else "wb"
-            with open(path, mode) as file:
-                file.write(contents.encode(self._config.encoding))
+            mode = "a" if self._config.append else "w"
+            with open(path, mode, encoding=self._config.encoding) as file:
+                file.write(contents)
         except IOError as ex:
             context.logger.error(f"Failed to write to file {path}: {ex}")
             return self.Result.ERROR
