@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Network configuratio.
+Network configuration.
 """
 
 from dataclasses import dataclass
