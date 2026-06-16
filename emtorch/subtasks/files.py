@@ -26,7 +26,7 @@ class FileWriter(BasicSubTask):
             bool, Doc("if true appends to the file, overwrite it otherwise")
         ] = False
         contents: Annotated[Template, Doc("contents of the file to write")]
-        encoding: Annotated[str, Doc("enccoding of the file")] = "utf-8"
+        encoding: Annotated[str, Doc("encoding of the file")] = "utf-8"
 
     def __init__(self, config: Config):
         self._config = config
@@ -35,7 +35,8 @@ class FileWriter(BasicSubTask):
         self, path: str, contents: str, context: SubTaskContext
     ) -> BasicSubTask.Result:
         try:
-            with open(path, "wb") as file:
+            mode = "ab" if self._config.append else "wb"
+            with open(path, mode) as file:
                 file.write(contents.encode(self._config.encoding))
         except IOError as ex:
             context.logger.error(f"File write error: {ex}")
