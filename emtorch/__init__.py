@@ -27,8 +27,12 @@ def execute(args: Arguments, config: dict[str, Any]) -> Results:
         with Context(config) as context:
             case = Case.create(context)
 
-            for instance in CaseInstance.list_from(args):
+            instances = CaseInstance.list_from(args)
+            for index, instance in enumerate(instances):
                 with context.enter_case(instance) as case_context:
+                    logger.info(
+                        f"Progress [{index+1}/{len(instances)}] - {case_context.case.identifier}"
+                    )
                     runner.run(case.execute(case_context))
 
             return context.results
