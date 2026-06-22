@@ -7,8 +7,8 @@ Module representing specific case instance (with id and data).
 """
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from ..arguments import Arguments, RepeatMode
 
@@ -38,39 +38,19 @@ class CaseData:
         return self._contents
 
 
+@dataclass
 class CaseId:
-    def __init__(self, identifier: str, group: str, iteration: int):
-        self._group = group
-        self._iteration = iteration
-        self._id = identifier
-
-    @property
-    def unique(self) -> str:
-        return self._id
-
-    @property
-    def group(self) -> str:
-        return self._group
-
-    @property
-    def iteration(self) -> int:
-        return self._iteration
+    group: str
+    iteration: int | None
 
     def __repr__(self) -> str:
-        return self.unique
-
-    @staticmethod
-    def builder_from(args: Arguments) -> Callable[[str, int], CaseId]:
-        width = max(1, len(str(args.repeats)))
-
-        def builder(group: str, iteration: int) -> CaseId:
-            return CaseId(f"{group}[{iteration:0{width}}]", group, iteration)
-
-        return builder
+        if self.iteration:
+            return f"{self.group}[{self.iteration}]"
+        return self.group
 
     @staticmethod
     def from_id(identifier: str) -> CaseId:
-        return CaseId(identifier, identifier, 0)
+        return CaseId(identifier, None)
 
 
 class CaseInstance:
@@ -101,5 +81,4 @@ class CaseInstance:
             case _:
                 raise ValueError(f"Unsupported repeat mode: {args.repeat_mode!r}")
 
-        id_builder = CaseId.builder_from(args)
-        return [CaseInstance(id_builder(d.identifier, i + 1), d) for d, i in pairs]
+        return [CaseInstance(CaseId(d.identifier, i + 1), d) for d, i in pairs]

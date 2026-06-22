@@ -35,7 +35,10 @@ from ..context import (
     DataRegistry,
 )
 from ..delay import Delay
-from ..results import Results, SubTaskResults
+from ..results import (
+    ResultsCollector,
+    SubTaskResults,
+)
 from ..results.basic import BasicResult
 
 logger = logging.getLogger(__name__)
@@ -116,7 +119,11 @@ class SubTaskInstance:
         args: dict[str, Any]
 
     def __init__(
-        self, fullname: str, config: Config, subtask: SubTask, results: SubTaskResults
+        self,
+        fullname: str,
+        config: Config,
+        subtask: SubTask,
+        results: SubTaskResults,
     ):
         self._name = fullname
         self._config = config
@@ -139,7 +146,7 @@ class SubTaskInstance:
         subcontext = SubTaskContext(context, self)
         await self._delays.wait_before(subcontext)
         result = await self._subtask.execute(subcontext)
-        self._results.collect(context.case.identifier, result)
+        self._results.collect(result)
         await self._delays.wait_after(subcontext)
         self.logger.info(f"Finished {self.name}")
 
@@ -167,7 +174,7 @@ class SubTaskContext:
         return self.parent.case
 
     @property
-    def results(self) -> Results:
+    def results(self) -> ResultsCollector:
         return self.parent.results
 
     @property
@@ -277,7 +284,7 @@ class SubTaskFactoryCache:
 
 
 class SubTasksBuilder:
-    def __init__(self, config_loader: ConfigLoader, results: Results):
+    def __init__(self, config_loader: ConfigLoader, results: ResultsCollector):
         self._factories = SubTaskFactoryCache(config_loader)
         self._results = results
 
@@ -287,7 +294,7 @@ class SubTasksBuilder:
         name = prefix + "." + config.name
         factory = self._factories.get(config.type)
         subtask = factory(config.args)
-        subresults = self._results.register_subtask(name, subtask.result_type)
+        subresults = self._results.add_subtask(name, subtask.result_type)
         return SubTaskInstance(name, config, subtask, subresults)
 
     def build(self, name: str, config: SubTasks.Config) -> SubTasks:
