@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
  - better console log filtering when not in `--verbose` mode
+ - added `known_hosts` configuration key to SSH/SFTP connections
 
 
 ## [3.0.0] - 2026-06-22

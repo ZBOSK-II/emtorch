@@ -20,6 +20,7 @@ class ConnectionConfig:
     port: int = 22
     username: str
     password: str
+    known_hosts: str = "~/.ssh/known_hosts"
 
     @asynccontextmanager
     async def open(self) -> AsyncIterator[asyncssh.SSHClientConnection]:
@@ -28,5 +29,6 @@ class ConnectionConfig:
             port=self.port,
             username=self.username,
             password=self.password,
+            known_hosts=self.known_hosts,
         ) as conn:
             yield conn
