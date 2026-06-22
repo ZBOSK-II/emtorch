@@ -19,6 +19,7 @@ def _given_data(*args: str) -> Arguments:
         config=Path("."),
         repeats=1,
         repeat_mode=RepeatMode.AABB,
+        verbose=True,
     )
 
 

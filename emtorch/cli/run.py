@@ -52,6 +52,12 @@ class RunCommand(Command):
             default="aabb",
             type=str,
         )
+        parser.add_argument(
+            "--verbose",
+            help="output all logs to the console",
+            default=False,
+            action=argparse.BooleanOptionalAction,
+        )
 
     def __parse_data(self, data: list[str]) -> list[Path]:
         result = [Path(f) for f in data]
@@ -76,10 +82,11 @@ class RunCommand(Command):
             config=args.config,
             repeat_mode=RepeatMode(args.repeat_mode),
             repeats=args.repeats,
+            verbose=args.verbose,
         )
 
     @staticmethod
-    def __setup_logger(prefix: str) -> None:
+    def __setup_logger(prefix: str, verbose: bool) -> None:
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
 
@@ -90,6 +97,8 @@ class RunCommand(Command):
 
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
+        if not verbose:
+            console_handler.addFilter(lambda r: r.__dict__.get("subtask") is None)
         root_logger.addHandler(console_handler)
 
         file_handler = logging.FileHandler(f"{prefix}.log")
@@ -100,5 +109,5 @@ class RunCommand(Command):
 
     def execute(self, args: argparse.Namespace) -> int:
         run_args = self.__parse_args(args)
-        self.__setup_logger(run_args.output_prefix)
+        self.__setup_logger(run_args.output_prefix, run_args.verbose)
         return run(run_args, ConfigLoader.load_toml(run_args.config))

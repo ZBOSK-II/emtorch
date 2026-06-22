@@ -23,3 +23,4 @@ class Arguments:
     config: Path
     repeats: int
     repeat_mode: RepeatMode
+    verbose: bool

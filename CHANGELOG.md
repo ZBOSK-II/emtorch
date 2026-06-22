@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - support for "plugins" - subtasks can be registered as "entry-points"
  - internal refactoring: all tasks now rely on asyncio, no more manual "workers" etc
  - configuration now based on TOML format
- - Case instances identifiers will start from 1 and not 0.
+ - case instances identifiers will start from 1 and not 0.
+ - "git style" subcommands introduced, with built-in help
 
 
 ## [2.1.2] - 2026-06-01
