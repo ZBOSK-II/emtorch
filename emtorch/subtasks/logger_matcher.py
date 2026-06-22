@@ -52,7 +52,6 @@ class LoggerMatcher[T: SupportedCollectorTypes](BasicSubTask):
                         collector.set_current(
                             cast(T, self._value_type(match.group("value")))
                         )
-                        error = False
                     except ValueError:
                         error = True
             return True
