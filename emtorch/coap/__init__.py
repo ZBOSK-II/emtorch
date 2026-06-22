@@ -6,8 +6,6 @@
 CoAP - Constrained Application Protocol support module.
 """
 
-from __future__ import annotations
-
 import asyncio
 from dataclasses import dataclass
 from enum import StrEnum, auto
@@ -134,9 +132,7 @@ class CoapMonitor(TypedSubTask[CoapMonitorResult]):
 
         result = loop.create_future()
 
-        delay = Delay(
-            self._config.observation_timeout, context.subtask.name + ".observation"
-        )
+        delay = Delay(self._config.observation_timeout, "observation")
 
         transport, protocol = await loop.create_datagram_endpoint(
             lambda: CoapProtocol(result, context.logger, self._config.address),
@@ -146,7 +142,7 @@ class CoapMonitor(TypedSubTask[CoapMonitorResult]):
         context.data.register(context.subtask.name, CoapConnection(transport, protocol))
 
         try:
-            await delay.wait()
+            await delay.wait(context.logger)
         finally:
             transport.close()
 

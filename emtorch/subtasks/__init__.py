@@ -6,13 +6,12 @@
 Module holding experiment building blocks - sub tasks.
 """
 
-from __future__ import annotations
-
 import asyncio
 import inspect
 import logging
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
+from dataclasses import field
 from enum import StrEnum
 from importlib.metadata import entry_points
 from typing import (
@@ -21,6 +20,7 @@ from typing import (
     AsyncIterator,
     Callable,
     Iterable,
+    Self,
     TypeAlias,
     cast,
 )
@@ -34,6 +34,7 @@ from ..context import (
     Context,
     DataRegistry,
 )
+from ..delay import Delay
 from ..results import Results, SubTaskResults
 from ..results.basic import BasicResult
 
@@ -81,11 +82,37 @@ class BasicSubTask(TypedSubTask[BasicResult]):
         pass
 
 
+class SubTaskDelays:
+    @configclass
+    class Config:
+        before: float = 0
+        after: float = 0
+
+    def __init__(self, before: Delay, after: Delay):
+        self._before = before
+        self._after = after
+
+    async def wait_before(self, context: SubTaskContext) -> None:
+        await self._before.wait(context.logger)
+
+    async def wait_after(self, context: SubTaskContext) -> None:
+        await self._after.wait(context.logger)
+
+    @classmethod
+    def from_config(cls, config: Config) -> Self:
+        return cls(
+            before=Delay(config.before, "before subtask"),
+            after=Delay(config.after, "after subtask"),
+        )
+
+
 class SubTaskInstance:
+    # pylint: disable=invalid-field-call
     @configclass
     class Config:
         name: str
         type: str
+        delays: SubTaskDelays.Config = field(default_factory=SubTaskDelays.Config)
         args: dict[str, Any]
 
     def __init__(
@@ -97,6 +124,7 @@ class SubTaskInstance:
         self._results = results
 
         self._logger = logging.LoggerAdapter(logger, extra={"subtask": self.name})
+        self._delays = SubTaskDelays.from_config(config.delays)
 
     @property
     def name(self) -> str:
@@ -109,8 +137,10 @@ class SubTaskInstance:
     async def execute(self, context: CaseContext) -> None:
         self.logger.info(f"Starting {self.name}")
         subcontext = SubTaskContext(context, self)
+        await self._delays.wait_before(subcontext)
         result = await self._subtask.execute(subcontext)
         self._results.collect(context.case.identifier, result)
+        await self._delays.wait_after(subcontext)
         self.logger.info(f"Finished {self.name}")
 
 

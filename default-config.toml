@@ -32,6 +32,10 @@ signal = "SIGKILL"
 type = "shell"
 name = "test"
 
+[actions.delays]
+before = 0.5
+after = 0.1
+
 [actions.args]
 cmd = "cat $EMTORCH_DATA_PATH"
 

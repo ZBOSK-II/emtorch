@@ -8,8 +8,12 @@ Module representing 'delay' in experiment execution.
 
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    LoggerAdapter = logging.LoggerAdapter[logging.Logger]
+else:
+    LoggerAdapter = logging.LoggerAdapter
 
 
 class Delay:
@@ -26,7 +30,9 @@ class Delay:
     def name(self) -> str:
         return self._name
 
-    async def wait(self) -> None:
-        logger.info(f"Waiting on {self.name} ({self._value}s)")
+    async def wait(self, logger: LoggerAdapter | logging.Logger) -> None:
+        if self._value == 0:
+            return
+        logger.info(f"Waiting {self.name} ({self._value}s)")
         await asyncio.sleep(self._value)
-        logger.info(f"Wait on {self.name} done")
+        logger.info(f"Wait {self.name} done")

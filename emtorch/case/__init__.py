@@ -30,16 +30,16 @@ class CaseDelays:
         self._before_actions = before_actions
 
     async def wait_before_actions(self) -> None:
-        await self._before_actions.wait()
+        await self._before_actions.wait(logger)
 
     async def wait_between_cases(self) -> None:
-        await self._between_cases.wait()
+        await self._between_cases.wait(logger)
 
     @classmethod
     def from_config(cls, config: Config) -> Self:
         return cls(
-            between_cases=Delay(config.between_cases, "delays.between_cases"),
-            before_actions=Delay(config.before_actions, "delays.before_actions"),
+            between_cases=Delay(config.between_cases, "between cases"),
+            before_actions=Delay(config.before_actions, "before actions"),
         )
 
 

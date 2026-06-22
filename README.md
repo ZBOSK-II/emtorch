@@ -149,6 +149,10 @@ interval = 1
 type = "shell"
 name = "run_test"
 
+[actions.delays]
+before = 0.5
+after = 0.1
+
 [actions.args]
 cmd = "cat $EMTORCH_DATA_PATH"
 

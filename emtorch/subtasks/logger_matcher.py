@@ -6,8 +6,6 @@
 Module representing collector for extracting values from log.
 """
 
-from __future__ import annotations
-
 import logging
 import re
 from typing import Annotated, cast

@@ -6,8 +6,6 @@
 Subpackage representing context of the experiment.
 """
 
-from __future__ import annotations
-
 import asyncio
 from types import TracebackType
 from typing import Any, Self, cast
