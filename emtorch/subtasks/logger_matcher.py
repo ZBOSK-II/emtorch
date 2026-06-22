@@ -58,11 +58,12 @@ class LoggerMatcher[T: SupportedCollectorTypes](BasicSubTask):
             return True
 
         root_logger = logging.getLogger()
-        root_logger.handlers[0].addFilter(log_filter)
+        handler = root_logger.handlers[0]
+        handler.addFilter(log_filter)
 
         await context.wait_for_actions_ended()
 
-        root_logger.handlers[0].removeFilter(log_filter)
+        handler.removeFilter(log_filter)
 
         if error:
             return self.Result.ERROR

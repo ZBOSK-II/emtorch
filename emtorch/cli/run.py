@@ -95,15 +95,15 @@ class RunCommand(Command):
         )
         formatter = logging.Formatter(fmt=log_format, defaults={"subtask": "-" * 24})
 
+        file_handler = logging.FileHandler(f"{prefix}.log")
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         if not verbose:
             console_handler.addFilter(lambda r: r.__dict__.get("subtask") is None)
         root_logger.addHandler(console_handler)
-
-        file_handler = logging.FileHandler(f"{prefix}.log")
-        file_handler.setFormatter(formatter)
-        root_logger.addHandler(file_handler)
 
         root_logger.info(f"Started instance ({VERSION})")
 
