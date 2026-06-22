@@ -72,7 +72,7 @@ class RunCommand(Command):
 
     def __parse_args(self, args: argparse.Namespace) -> Arguments:
         if args.repeats < 1:
-            self.parser.error("--repeats must be >= 1")
+            self._parser.error("--repeats must be >= 1")
 
         date_suffix = f"-{datetime.now():%Y%m%d-%H%M%S}"
 
