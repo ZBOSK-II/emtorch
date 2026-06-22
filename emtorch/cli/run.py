@@ -86,7 +86,13 @@ class RunCommand(Command):
         )
 
     @staticmethod
-    def __setup_logger(prefix: str, verbose: bool) -> None:
+    def __logger_filter(record: logging.LogRecord) -> bool:
+        if record.name != "root" and not record.name.startswith("emtorch"):
+            return False
+        return record.__dict__.get("subtask") is None
+
+    @classmethod
+    def __setup_logger(cls, prefix: str, verbose: bool) -> None:
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
 
@@ -102,7 +108,7 @@ class RunCommand(Command):
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         if not verbose:
-            console_handler.addFilter(lambda r: r.__dict__.get("subtask") is None)
+            console_handler.addFilter(cls.__logger_filter)
         root_logger.addHandler(console_handler)
 
         root_logger.info(f"Started instance ({VERSION})")
