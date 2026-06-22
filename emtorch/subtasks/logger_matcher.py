@@ -44,6 +44,9 @@ class LoggerMatcher[T: SupportedCollectorTypes](BasicSubTask):
         error = False
 
         def log_filter(r: logging.LogRecord) -> bool:
+            # NOTE: This callback is intentionally used as an observer.
+            # It extracts values from matching records but never blocks logging,
+            # so it must always return True.
             nonlocal error
             if r.__dict__.get("subtask") == self._config.subtask:
                 match = self._regex.search(r.getMessage())
