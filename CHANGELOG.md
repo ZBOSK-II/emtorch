@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.0] - 2026-06-22
 
 ### Changed
- - dropped Python 3.13 support
+ - minimum supported Python version is now 3.14 (Python 3.13 and earlier are no longer supported)
  - support for "plugins" - subtasks can be registered as "entry-points"
  - internal refactoring: all tasks now rely on asyncio, no more manual "workers" etc
  - configuration now based on TOML format
