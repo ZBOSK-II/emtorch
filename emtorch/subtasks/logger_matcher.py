@@ -11,11 +11,11 @@ import re
 from typing import Annotated, cast
 
 from ..config import Doc, configclass
-from ..results.values.collector import SupportedCollectorTypes
+from ..results import ValuePoint
 from . import BasicSubTask, SubTaskContext
 
 
-class LoggerMatcher[T: SupportedCollectorTypes](BasicSubTask):
+class LoggerMatcher[T: ValuePoint](BasicSubTask):
 
     @configclass
     class Config:
@@ -68,7 +68,7 @@ class LoggerMatcher[T: SupportedCollectorTypes](BasicSubTask):
         if error:
             return self.Result.ERROR
         if collector.has_value():
-            collector.commit(context.case.identifier)
+            collector.commit()
             return self.Result.SUCCESS
         return self.Result.FAILURE
 

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+ - results JSON simplified (no aggregations etc., just list of results)
+
 ### Added
  - new `--map` switch to `run` command for introducing user-specified $-strings template variables
 

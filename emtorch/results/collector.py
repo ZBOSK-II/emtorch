@@ -8,22 +8,19 @@ Module representing value collector.
 
 from typing import Self
 
-from ...case.instance import CaseId
-from ...results import Results
-from . import TypedValue
-
-type SupportedCollectorTypes = int | float
+from . import Results, ResultsCollector, ValuePoint
 
 
-class Collector[T: SupportedCollectorTypes]:
+class Collector[T: ValuePoint]:
 
-    def __init__(self, value: TypedValue[T]):
-        self._value = value
+    def __init__(self, name: str, results: Results):
+        self._name = name
         self._current_value: None | T = None
+        self._results = results
 
-    def commit(self, case_id: CaseId) -> None:
+    def commit(self) -> None:
         if self._current_value is not None:
-            self._value.collect(case_id, self._current_value)
+            self._results.current.values[self._name] = self._current_value
             self._current_value = None
 
     def set_current(self, value: T) -> None:
@@ -33,7 +30,11 @@ class Collector[T: SupportedCollectorTypes]:
         return self._current_value is not None
 
     @classmethod
-    def create(cls, name: str, results: Results) -> Self:
-        value = TypedValue[T]()
-        results.register_value(name, value)
-        return cls(value)
+    def create(
+        cls,
+        name: str,
+        results: ResultsCollector,
+        value_type: type[T],
+    ) -> Self:
+        results.add_value(name, value_type)
+        return cls(name, results.data)

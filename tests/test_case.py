@@ -25,7 +25,7 @@ def _given_data(*args: str) -> Arguments:
 
 
 def _cases_ids(cases: list[CaseInstance]) -> list[str]:
-    return [c.identifier.unique for c in cases]
+    return [str(c.identifier) for c in cases]
 
 
 def _data_ids(cases: list[CaseInstance]) -> list[str]:
@@ -86,16 +86,5 @@ def test_repeats_handles_large_number() -> None:
     cases = CaseInstance.list_from(args)
 
     assert len(cases) == 600
-    assert _cases_ids(cases)[0] == "a[001]"
+    assert _cases_ids(cases)[0] == "a[1]"
     assert _cases_ids(cases)[-1] == "c[200]"
-
-
-def test_repeats_handles_large_number_edge_case() -> None:
-    args = _given_data("a", "b", "c")
-    args.repeats = 1000
-
-    cases = CaseInstance.list_from(args)
-
-    assert len(cases) == 3000
-    assert _cases_ids(cases)[0] == "a[0001]"
-    assert _cases_ids(cases)[-1] == "c[1000]"

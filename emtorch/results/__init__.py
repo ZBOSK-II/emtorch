@@ -7,132 +7,133 @@ Module representing experiment results.
 """
 
 import sys
-from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Collection, Mapping
+from typing import Any
 
 from ..case.instance import CaseId
 from ..version import VERSION
-from .values import Value
+
+type ValuePoint = int | float
 
 
 class SubTaskResults:
 
-    def __init__(self, results_names: list[str], success: str) -> None:
-        self.subtasks: dict[str, list[str]] = {}
-        for result in results_names:
-            self.subtasks[result] = []
+    def __init__(
+        self, name: str, collector: ResultsCollector, results: list[str]
+    ) -> None:
+        self._name = name
+        self._collector = collector
+        self._success = results[0]
+        self._counter: dict[str, int] = {}
+        for r in results:
+            self._counter[r] = 0
 
-        self.success = success
-
-        self.failed_cases: dict[str, str] = {}
-        self.failed_groups: dict[str, list[str]] = defaultdict(list)
-
-    def collect(self, case_id: CaseId, result: str) -> None:
-        self.subtasks[result].append(case_id.unique)
-        if result != self.success:
-            self.failed_cases[case_id.unique] = result
-            self.failed_groups[case_id.group].append(case_id.unique)
-
-    def total(self) -> int:
-        return sum(len(v) for v in self.subtasks.values())
-
-    def total_errors(self) -> int:
-        return len(self.failed_cases)
-
-    def summary(self, indent: str = "\t") -> str:
-        return "\n".join(f"{indent}{k}: {len(v)}" for k, v in self.subtasks.items())
-
-    def to_dict(self) -> dict[str, list[str]]:
-        return self.subtasks
-
-    def to_failed_ids_dict(self) -> dict[str, str]:
-        return self.failed_cases
-
-    def to_failed_groups_dict(self) -> dict[str, list[str]]:
-        return self.failed_groups
-
-
-class Results:
-
-    def __init__(self, config: dict[str, Any]):
-        self.subtasks: dict[str, SubTaskResults] = {}
-        self.values: dict[str, Value] = {}
-        self.cases: list[str] = []
-        self.groups: set[str] = set()
-        self.info = {
-            "version": VERSION,
-            "args": " ".join(sys.argv[1:]),
-            "config": config,
-            "start": self.__iso_timestamp(),
-        }
-
-    def register_subtask(self, name: str, results: type[StrEnum]) -> SubTaskResults:
-        r = list(str(item) for item in results)
-        s = SubTaskResults(r, r[0])
-        if name in self.subtasks:
-            raise RuntimeError(
-                f"Subtask results already registered: '{name}'. Probably duplicated name."
-            )
-        self.subtasks[name] = s
-        return s
-
-    def register_value(self, name: str, value: Value) -> Value:
-        if name in self.values:
-            raise RuntimeError(
-                f"Value results already registered: '{name}'. Probably duplicated name."
-            )
-        self.values[name] = value
-        return value
-
-    def add_case(self, case_id: CaseId) -> None:
-        self.cases.append(case_id.unique)
-        self.groups.add(case_id.group)
-
-    def finish(self) -> None:
-        self.info["end"] = self.__iso_timestamp()
+    def collect(self, result: str) -> None:
+        if result != self._success:
+            self._collector.failed_count += 1
+        self._counter[result] += 1
+        self._collector.data.current.subtasks[self._name] = result
 
     def summary(self) -> str:
-        header = f"Processed: {len(self.cases)}\n"
-        header += f"Groups: {len(self.groups)}\n"
-        return header + "\n".join(
-            f"{k} ({v.total_errors()}/{v.total()}):\n{v.summary()}"
-            for k, v in self.subtasks.items()
+        header = f"{self._name}:\n"
+        return (
+            header + "\n".join(f"\t{k}: {v}" for k, v in self._counter.items()) + "\n"
         )
 
-    def total_errors(self) -> int:
-        return sum(g.total_errors() for g in self.subtasks.values())
 
-    def failed_cases(self) -> dict[str, list[str]]:
-        result = defaultdict(list)
-        for g, d in self.subtasks.items():
-            for k, v in d.to_failed_ids_dict().items():
-                result[k].append(g + "." + v)
-        return dict(result)
+def _iso_timestamp() -> str:
+    return datetime.now().astimezone().isoformat()
 
-    def failed_groups(self) -> dict[str, list[str]]:
-        result: dict[str, list[str]] = defaultdict(list)
-        for d in self.subtasks.values():
-            for k, v in d.to_failed_groups_dict().items():
-                result[k] += v
-        return dict(result)
 
-    def to_dict(self) -> Mapping[str, Collection[Any]]:
-        return {
-            "info": self.info,
-            "cases": {
-                "all": self.cases,
-                "failed": self.failed_cases(),
-            },
-            "groups": {
-                "all": list(self.groups),
-                "failed": self.failed_groups(),
-            },
-            "subtasks": {k: v.to_dict() for k, v in self.subtasks.items()},
-            "values": {k: v.to_dict() for k, v in self.values.items()},
-        }
+@dataclass(kw_only=True)
+class ExperimentInfo:
+    version: str = field(init=False)
+    args: list[str] = field(init=False)
+    config: dict[str, Any]
+    start: str = field(init=False)
+    finish: str | None = field(init=False)
 
-    @staticmethod
-    def __iso_timestamp() -> str:
-        return datetime.now().astimezone().isoformat()
+    def __post_init__(self) -> None:
+        self.version = VERSION
+        self.args = sys.argv[1:]
+        self.start = _iso_timestamp()
+        self.finish = None
+
+
+@dataclass
+class CaseResult:
+    case_id: CaseId
+    subtasks: dict[str, str] = field(default_factory=dict)
+    values: dict[str, ValuePoint] = field(default_factory=dict)
+
+
+@dataclass
+class SubTaskInfo:
+    name: str
+    results: list[str]
+
+
+@dataclass
+class ValueInfo:
+    name: str
+    type: str
+
+
+@dataclass
+class Results:
+    info: ExperimentInfo
+    subtasks: list[SubTaskInfo] = field(default_factory=list)
+    values: list[ValueInfo] = field(default_factory=list)
+    cases: list[CaseResult] = field(default_factory=list)
+
+    @property
+    def current(self) -> CaseResult:
+        return self.cases[-1]
+
+
+class ResultsCollector:
+    def __init__(self, config: dict[str, Any]) -> None:
+        self._collector = Results(info=ExperimentInfo(config=config))
+        self._subtasks: list[SubTaskResults] = []
+        self.failed_count = 0
+
+    @property
+    def data(self) -> Results:
+        return self._collector
+
+    def add_subtask(self, name: str, results: type[StrEnum]) -> SubTaskResults:
+        if name in [s.name for s in self.data.subtasks]:
+            raise RuntimeError(
+                f"Subtask already registered: '{name}'. Probably duplicated name."
+            )
+        r = list(str(item) for item in results)
+        info = SubTaskInfo(name=name, results=r)
+        self.data.subtasks.append(info)
+        subresults = SubTaskResults(name, self, r)
+        self._subtasks.append(subresults)
+        return subresults
+
+    def add_value[T: int | float](self, name: str, value_type: type[T]) -> None:
+        if name in [s.name for s in self.data.values]:
+            raise RuntimeError(
+                f"Value already registered: '{name}'. Probably duplicated name."
+            )
+        info = ValueInfo(name=name, type=value_type.__name__)
+        self.data.values.append(info)
+
+    def add_case(self, case_id: CaseId) -> None:
+        self.data.cases.append(CaseResult(case_id=case_id))
+
+    def finish(self) -> None:
+        self.data.info.finish = _iso_timestamp()
+
+    def summary(self) -> str:
+        result = ""
+        for s in self._subtasks:
+            result += s.summary()
+        result += "\n"
+        result += f"Processed cases: {len(self.data.cases)}\n"
+        result += f"Failed subtasks: {self.failed_count}\n"
+        return result

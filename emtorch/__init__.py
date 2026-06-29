@@ -7,20 +7,21 @@ Main module of the application.
 """
 
 import asyncio
-import json
 import logging
 from typing import Any
+
+from pydantic import TypeAdapter
 
 from .arguments import Arguments
 from .case import Case
 from .case.instance import CaseInstance
 from .context import Context
-from .results import Results
+from .results import Results, ResultsCollector
 
 logger = logging.getLogger(__name__)
 
 
-def execute(args: Arguments, config: dict[str, Any]) -> Results:
+def execute(args: Arguments, config: dict[str, Any]) -> ResultsCollector:
     with asyncio.Runner() as runner:
         runner.get_loop().set_task_factory(asyncio.eager_task_factory)
 
@@ -43,8 +44,7 @@ def run(args: Arguments, config: dict[str, Any]) -> int:
 
     logger.info(f"Results:\n{results.summary()}")
 
-    with open(args.output_prefix + ".json", "w", encoding="utf-8") as f:
-        json.dump(results.to_dict(), f, indent=2)
-        f.write("\n")
+    with open(args.output_prefix + ".json", "wb") as f:
+        f.write(TypeAdapter(Results).dump_json(results.data, indent=2))
 
-    return results.total_errors()
+    return results.failed_count

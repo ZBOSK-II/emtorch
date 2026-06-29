@@ -12,8 +12,8 @@ from typing import Any, Self, cast
 
 from ..case.instance import CaseInstance
 from ..config.loader import ConfigLoader
-from ..results import Results
-from ..results.values.collector import Collector, SupportedCollectorTypes
+from ..results import ResultsCollector, ValuePoint
+from ..results.collector import Collector
 
 
 class DataRegistry:
@@ -38,19 +38,16 @@ class DataRegistry:
 class CollectorRegistry:
 
     def __init__(self, parent: Context):
-        self._collectors: dict[str, Collector[SupportedCollectorTypes]] = {}
+        self._collectors: dict[str, Collector[ValuePoint]] = {}
         self._parent = parent
 
-    def get[T: SupportedCollectorTypes](
-        self, data_type: type[T], name: str
-    ) -> Collector[T]:
+    def get[T: ValuePoint](self, data_type: type[T], name: str) -> Collector[T]:
         if item := self._collectors.get(name):
             return cast(Collector[T], item)
 
-        _ = data_type
-        result = Collector[T].create(name, self._parent.results)
+        result = Collector[T].create(name, self._parent.results, data_type)
 
-        self._collectors[name] = cast(Collector[SupportedCollectorTypes], result)
+        self._collectors[name] = cast(Collector[ValuePoint], result)
         return result
 
 
@@ -61,7 +58,7 @@ class Context:
         self._collectors = CollectorRegistry(self)
         self._config_loader = ConfigLoader()
         self._config_raw = config
-        self._results = Results(config)
+        self._results = ResultsCollector(config)
         self._mapping = mapping
         self._first_case_executed = False
 
@@ -82,7 +79,7 @@ class Context:
         return self._collectors
 
     @property
-    def results(self) -> Results:
+    def results(self) -> ResultsCollector:
         return self._results
 
     @property
@@ -118,12 +115,10 @@ class CaseContext:
         self._data = DataRegistry()
         self._actions_ended = asyncio.Event()
         self._mapping = parent.mapping | {
-            "EMTORCH_CASE_ID": case.identifier.unique,
+            "EMTORCH_CASE_ID": str(case.identifier),
             "EMTORCH_DATA_PATH": str(case.data.path),
             "EMTORCH_DATA_FILENAME": case.data.path.name,
         }
-
-        self.results.add_case(self.case.identifier)
 
     @property
     def parent(self) -> Context:
@@ -134,7 +129,7 @@ class CaseContext:
         return self._case
 
     @property
-    def results(self) -> Results:
+    def results(self) -> ResultsCollector:
         return self._parent.results
 
     @property
@@ -160,6 +155,7 @@ class CaseContext:
         self._actions_ended.set()
 
     def __enter__(self) -> Self:
+        self.results.add_case(self.case.identifier)
         return self
 
     def __exit__(
