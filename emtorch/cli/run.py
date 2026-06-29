@@ -11,9 +11,12 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from .. import run
+from pydantic import TypeAdapter
+
+from .. import execute as emtorch_exec
 from ..arguments import Arguments, RepeatMode
 from ..config.loader import ConfigLoader
+from ..results import Results
 from ..version import VERSION
 from .command import Command
 
@@ -132,4 +135,12 @@ class RunCommand(Command):
     def execute(self, args: argparse.Namespace) -> int:
         run_args = self.__parse_args(args)
         self.__setup_logger(run_args.output_prefix, run_args.verbose)
-        return run(run_args, ConfigLoader.load_toml(run_args.config))
+
+        results = emtorch_exec(run_args, ConfigLoader.load_toml(run_args.config))
+
+        logging.getLogger().info(f"Results:\n{results.summary()}")
+
+        with open(args.output_prefix + ".json", "wb") as f:
+            f.write(TypeAdapter(Results).dump_json(results.data, indent=2))
+
+        return results.failed_count

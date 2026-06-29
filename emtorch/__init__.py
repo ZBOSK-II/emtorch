@@ -10,13 +10,11 @@ import asyncio
 import logging
 from typing import Any
 
-from pydantic import TypeAdapter
-
 from .arguments import Arguments
 from .case import Case
 from .case.instance import CaseInstance
 from .context import Context
-from .results import Results, ResultsCollector
+from .results import ResultsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +35,3 @@ def execute(args: Arguments, config: dict[str, Any]) -> ResultsCollector:
                     runner.run(case.execute(case_context))
 
             return context.results
-
-
-def run(args: Arguments, config: dict[str, Any]) -> int:
-    results = execute(args, config)
-
-    logger.info(f"Results:\n{results.summary()}")
-
-    with open(args.output_prefix + ".json", "wb") as f:
-        f.write(TypeAdapter(Results).dump_json(results.data, indent=2))
-
-    return results.failed_count
