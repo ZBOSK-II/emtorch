@@ -140,7 +140,7 @@ class RunCommand(Command):
 
         logging.getLogger().info(f"Results:\n{results.summary()}")
 
-        with open(args.output_prefix + ".json", "wb") as f:
+        with open(run_args.output_prefix + ".json", "wb") as f:
             f.write(TypeAdapter(Results).dump_json(results.data, indent=2))
 
         return results.failed_count
