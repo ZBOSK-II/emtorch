@@ -18,6 +18,14 @@ from ..version import VERSION
 from .command import Command
 
 
+def _parse_mapping(s: str) -> tuple[str, str]:
+    try:
+        key, value = s.split("=", 1)
+        return key, value
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Expected format KEY=VALUE") from exc
+
+
 class RunCommand(Command):
     def __init__(self, parser: argparse.ArgumentParser):
         super().__init__(parser)
@@ -53,6 +61,13 @@ class RunCommand(Command):
             type=str,
         )
         parser.add_argument(
+            "--map",
+            action="append",
+            type=_parse_mapping,
+            metavar="KEY=VALUE",
+            help="provide mapping for $-string interpolation",
+        )
+        parser.add_argument(
             "--verbose",
             help="output all logs to the console",
             default=False,
@@ -82,6 +97,7 @@ class RunCommand(Command):
             config=args.config,
             repeat_mode=RepeatMode(args.repeat_mode),
             repeats=args.repeats,
+            mapping=dict(args.map or []),
             verbose=args.verbose,
         )
 

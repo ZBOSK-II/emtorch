@@ -21,11 +21,7 @@ class Template(StringTemplate):
     flags = RegexFlag(0)
 
     def evaluate(self, context: CaseContext) -> str:
-        return self.safe_substitute(
-            EMTORCH_CASE_ID=context.case.identifier.unique,
-            EMTORCH_DATA_PATH=str(context.case.data.path),
-            EMTORCH_DATA_FILENAME=context.case.data.path.name,
-        )
+        return self.safe_substitute(context.mapping)
 
     @classmethod
     def __get_pydantic_core_schema__(

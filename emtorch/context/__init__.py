@@ -56,12 +56,13 @@ class CollectorRegistry:
 
 class Context:
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any], mapping: dict[str, str]):
         self._data = DataRegistry()
         self._collectors = CollectorRegistry(self)
         self._config_loader = ConfigLoader()
         self._config_raw = config
         self._results = Results(config)
+        self._mapping = mapping
         self._first_case_executed = False
 
     @property
@@ -83,6 +84,10 @@ class Context:
     @property
     def results(self) -> Results:
         return self._results
+
+    @property
+    def mapping(self) -> dict[str, str]:
+        return self._mapping
 
     @property
     def first_case_executed(self) -> bool:
@@ -112,6 +117,11 @@ class CaseContext:
         self._case = case
         self._data = DataRegistry()
         self._actions_ended = asyncio.Event()
+        self._mapping = parent.mapping | {
+            "EMTORCH_CASE_ID": case.identifier.unique,
+            "EMTORCH_DATA_PATH": str(case.data.path),
+            "EMTORCH_DATA_FILENAME": case.data.path.name,
+        }
 
         self.results.add_case(self.case.identifier)
 
@@ -134,6 +144,10 @@ class CaseContext:
     @property
     def collectors(self) -> CollectorRegistry:
         return self.parent.collectors
+
+    @property
+    def mapping(self) -> dict[str, str]:
+        return self._mapping
 
     @property
     def first_case_executed(self) -> bool:

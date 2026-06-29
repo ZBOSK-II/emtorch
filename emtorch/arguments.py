@@ -24,3 +24,4 @@ class Arguments:
     repeats: int
     repeat_mode: RepeatMode
     verbose: bool
+    mapping: dict[str, str]

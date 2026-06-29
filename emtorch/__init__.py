@@ -24,7 +24,7 @@ def execute(args: Arguments, config: dict[str, Any]) -> Results:
     with asyncio.Runner() as runner:
         runner.get_loop().set_task_factory(asyncio.eager_task_factory)
 
-        with Context(config) as context:
+        with Context(config, args.mapping) as context:
             case = Case.create(context)
 
             instances = CaseInstance.list_from(args)

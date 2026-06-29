@@ -177,6 +177,8 @@ Available template variables:
 - `$EMTORCH_DATA_PATH` - full path to the case data file
 - `$EMTORCH_DATA_FILENAME` - filename only of the case data
 
+Additional variables can be introduced using `--map` argument.
+
 Example usage:
 ``` toml
 [[actions]]
