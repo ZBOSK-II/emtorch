@@ -25,3 +25,6 @@ class Arguments:
     repeat_mode: RepeatMode
     verbose: bool
     mapping: dict[str, str]
+
+    def output(self, suffix: str) -> Path:
+        return Path(self.output_prefix + suffix)

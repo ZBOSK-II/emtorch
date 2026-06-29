@@ -11,12 +11,10 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from pydantic import TypeAdapter
-
 from .. import execute as emtorch_exec
 from ..arguments import Arguments, RepeatMode
 from ..config.loader import ConfigLoader
-from ..results import Results
+from ..results.file import write_results
 from ..version import VERSION
 from .command import Command
 
@@ -111,7 +109,7 @@ class RunCommand(Command):
         return record.__dict__.get("subtask") is None
 
     @classmethod
-    def __setup_logger(cls, prefix: str, verbose: bool) -> None:
+    def __setup_logger(cls, log_file: Path, verbose: bool) -> None:
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
 
@@ -120,7 +118,7 @@ class RunCommand(Command):
         )
         formatter = logging.Formatter(fmt=log_format, defaults={"subtask": "-" * 24})
 
-        file_handler = logging.FileHandler(f"{prefix}.log")
+        file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
 
@@ -134,13 +132,12 @@ class RunCommand(Command):
 
     def execute(self, args: argparse.Namespace) -> int:
         run_args = self.__parse_args(args)
-        self.__setup_logger(run_args.output_prefix, run_args.verbose)
+        self.__setup_logger(run_args.output(".log"), run_args.verbose)
 
         results = emtorch_exec(run_args, ConfigLoader.load_toml(run_args.config))
 
         logging.getLogger().info(f"Results:\n{results.summary()}")
 
-        with open(run_args.output_prefix + ".json", "wb") as f:
-            f.write(TypeAdapter(Results).dump_json(results.data, indent=2))
+        write_results(run_args.output(".json"), results.data)
 
         return results.failed_count
