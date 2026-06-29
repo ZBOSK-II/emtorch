@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - new `--map` switch to `run` command for introducing user-specified $-strings template variables
+ - `values` command to output values from results into various tables
 
 
 ## [3.0.1] - 2026-06-22

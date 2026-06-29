@@ -28,6 +28,15 @@ cmd = "while true; do echo looping; sleep 1; done"
 timeout = 5
 signal = "SIGKILL"
 
+[[monitoring]]
+type = "logger-int-matcher"
+name = "logger"
+
+[monitoring.args]
+value = "logger"
+pattern = "count\\s+=\\s+(?P<value>\\d+)"
+subtask = "actions.test"
+
 [[actions]]
 type = "shell"
 name = "test"

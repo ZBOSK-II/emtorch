@@ -10,6 +10,7 @@ dependencies = [
   "pydantic==2.13.4",
   "asyncssh==2.23.1",
   "fieldz==0.2.0",
+  "prettytable==3.18.0",
 ]
 authors = [
     {name = "Konrad Grochowski", email = "Konrad.Grochowski@pw.edu.pl"},

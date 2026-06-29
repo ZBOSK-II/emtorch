@@ -15,6 +15,7 @@ from .command import Command
 from .run import RunCommand
 from .subtask import SubTaskCommand
 from .subtasks import SubTasksCommand
+from .values import ValuesCommand
 
 
 class Cli:
@@ -47,6 +48,7 @@ class Cli:
         self.__add_command(
             SubTaskCommand, "subtask", "provides documentation for the given task"
         )
+        self.__add_command(ValuesCommand, "values", "extracts values from results")
 
     def __add_command[T: Command](
         self, command: type[T], name: str, description: str
