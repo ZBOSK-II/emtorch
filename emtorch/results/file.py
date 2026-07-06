@@ -14,7 +14,7 @@ from . import Results
 
 
 def write_results(path: Path, results: Results) -> None:
-    with path.open("wb") as f:
+    with path.open("w", encoding="utf-8") as f:
         f.write(TypeAdapter(Results).dump_json(results, indent=2))
 
 
