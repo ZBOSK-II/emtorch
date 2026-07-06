@@ -35,7 +35,7 @@ class Cli:
 
         self._subparsers = self._parser.add_subparsers(
             metavar="COMMAND",
-            help="emtorch command to be execute (listed below)",
+            help="emtorch command to be executed (listed below)",
             required=True,
         )
 
