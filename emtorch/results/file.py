@@ -14,9 +14,9 @@ from . import Results
 
 
 def write_results(path: Path, results: Results) -> None:
-    with path.open("w", encoding="utf-8") as f:
+    with path.open("wb") as f:
         f.write(TypeAdapter(Results).dump_json(results, indent=2))
 
 
 def load_results(path: Path) -> Results:
-    return TypeAdapter(Results).validate_json(path.read_text())
+    return TypeAdapter(Results).validate_json(path.read_bytes())
