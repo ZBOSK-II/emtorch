@@ -12,6 +12,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
+from ..arguments import Arguments
 from ..case.instance import CaseId
 from ..version import VERSION
 
@@ -50,13 +51,14 @@ def _iso_timestamp() -> str:
 @dataclass(kw_only=True)
 class ExperimentInfo:
     version: str = field(init=False, default=VERSION)
-    args: list[str] = field(init=False, default_factory=list)
+    args_raw: list[str] = field(init=False, default_factory=list)
+    args: Arguments
     config: dict[str, Any]
     start: str | None = field(init=False, default=None)
     finish: str | None = field(init=False, default=None)
 
     def __post_init__(self) -> None:
-        self.args = sys.argv[1:]
+        self.args_raw = sys.argv[1:]
         self.start = _iso_timestamp()
 
 
@@ -92,8 +94,8 @@ class Results:
 
 
 class ResultsCollector:
-    def __init__(self, config: dict[str, Any]) -> None:
-        self._collector = Results(info=ExperimentInfo(config=config))
+    def __init__(self, config: dict[str, Any], args: Arguments) -> None:
+        self._collector = Results(info=ExperimentInfo(config=config, args=args))
         self._subtasks: list[SubTaskResults] = []
         self.failed_count = 0
 

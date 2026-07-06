@@ -59,8 +59,8 @@ class Context:
         self._collectors = CollectorRegistry(self)
         self._config_loader = ConfigLoader()
         self._config_raw = config
-        self._results = ResultsCollector(config)
         self._args = args
+        self._results = ResultsCollector(config, args)
         self._first_case_executed = False
 
     @property
