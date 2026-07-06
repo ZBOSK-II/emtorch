@@ -36,14 +36,18 @@ class ValuesCommand(Command):
             type=Path,
             help="JSON results file to extract values from",
         )
-
         parser.add_argument(
             "--output",
             type=Path,
             help="output file (if not provided, STDOUT will be used)",
         )
+        parser.add_argument(
+            "--format",
+            help="output format",
+            choices=["csv", "text", "latex", "mediawiki", "html", "json"],
+            default="csv",
+        )
 
-        # format
         # filtering values
         # filtering rows
         # displayed columns
@@ -60,6 +64,6 @@ class ValuesCommand(Command):
             table.add_row(row)
 
         with _select_output(args) as output:
-            print(table.get_formatted_string(out_format="csv"), file=output)
+            print(table.get_formatted_string(out_format=args.format), file=output)
 
         return 0
