@@ -49,17 +49,15 @@ def _iso_timestamp() -> str:
 
 @dataclass(kw_only=True)
 class ExperimentInfo:
-    version: str = field(init=False)
-    args: list[str] = field(init=False)
+    version: str = field(init=False, default=VERSION)
+    args: list[str] = field(init=False, default_factory=list)
     config: dict[str, Any]
-    start: str = field(init=False)
-    finish: str | None = field(init=False)
+    start: str | None = field(init=False, default=None)
+    finish: str | None = field(init=False, default=None)
 
     def __post_init__(self) -> None:
-        self.version = VERSION
         self.args = sys.argv[1:]
         self.start = _iso_timestamp()
-        self.finish = None
 
 
 @dataclass
