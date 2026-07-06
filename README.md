@@ -216,6 +216,42 @@ has a type, name, and type-specific arguments.
 - Run `emtorch subtasks` to list all available subtasks
 - Run `emtorch subtask <NAME>` to see documentation for a specific subtask
 
+
+Results
+------------------------------------------------------------
+
+Results include:
+  * log file containing all messages captured during the experiment
+  * JSON file with experiment summary
+
+JSON file has following items:
+ * info - general experiment information, including used emtorch version, configuration etc.
+ * subtask - information on all subtasks, their names and possible results
+ * values - list of values that can be captured during the experiment
+ * cases - results of each tests case, including results of all subtasks and captured values.
+
+
+Exporting values
+------------------------------------------------------------
+
+Results can contain "values" captured during the experiment (e.g. by using sub-task
+`logger-int-matcher` ). To extract those into more portable format use `values` command.
+
+For example:
+
+``` shell
+$ emtorch values emtorch-20260706-114255.json --format=text --include .\*abc
++------------+-----------+-------------+
+|    Case    | Iteration | counter-abc |
++------------+-----------+-------------+
+| data-1.elf |     1     |   6413174   |
+| data-1.elf |     2     |   6413134   |
+| data-1.elf |     3     |   6413193   |
+| data-1.elf |     4     |   6413100   |
+| data-1.elf |     5     |   6413099   |
++------------+-----------+-------------+
+```
+
 Project Information
 ------------------------------------------------------------
 - **License:** MIT License
