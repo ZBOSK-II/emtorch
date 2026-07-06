@@ -7,13 +7,24 @@
 """
 
 import argparse
+from contextlib import contextmanager
 from pathlib import Path
 from sys import stdout
+from typing import Iterator, TextIO
 
 from prettytable import PrettyTable
 
 from ..results.file import load_results
 from .command import Command
+
+
+@contextmanager
+def _select_output(args: argparse.Namespace) -> Iterator[TextIO]:
+    if args.output:
+        with args.output.open("w") as output:
+            yield output
+    else:
+        yield stdout
 
 
 class ValuesCommand(Command):
@@ -26,8 +37,13 @@ class ValuesCommand(Command):
             help="JSON results file to extract values from",
         )
 
+        parser.add_argument(
+            "--output",
+            type=Path,
+            help="output file (if not provided, STDOUT will be used)",
+        )
+
         # format
-        # output (other than stdout)
         # filtering values
         # filtering rows
         # displayed columns
@@ -43,7 +59,8 @@ class ValuesCommand(Command):
             row += [case.values.get(v) for v in values]
             table.add_row(row)
 
-        print(table.get_formatted_string(out_format="csv"), file=stdout)
+        with _select_output(args) as output:
+            print(table.get_formatted_string(out_format="csv"), file=output)
 
         # missing rows
         # missing columns
