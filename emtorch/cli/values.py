@@ -14,6 +14,8 @@ from typing import Iterator, TextIO
 
 from prettytable import PrettyTable
 
+from ..case.instance import CaseId
+from ..results import Results
 from ..results.file import load_results
 from .command import Command
 
@@ -52,14 +54,29 @@ class ValuesCommand(Command):
         # filtering rows
         # displayed columns
         # header
+        #
+
+    @staticmethod
+    def _case_header(results: Results) -> list[str]:
+        if results.info.args.repeats > 1:
+            return ["Case", "Iteration"]
+        return ["Case"]
+
+    @staticmethod
+    def _case_id(case_id: CaseId) -> list[str | int | float]:
+        if case_id.iteration is not None:
+            return [case_id.group, case_id.iteration]
+        return [case_id.group]
 
     def execute(self, args: argparse.Namespace) -> int:
         results = load_results(args.results)
         table = PrettyTable()
         values = [v.name for v in results.values]
-        table.field_names = ["Case"] + [v.name for v in results.values]
+        table.field_names = self._case_header(results) + [
+            v.name for v in results.values
+        ]
         for case in results.cases:
-            row: list[str | int | float | None] = [str(case.case_id)]
+            row: list[str | int | float] = self._case_id(case.case_id)
             row += [case.values.get(v, "") for v in values]
             table.add_row(row)
 
