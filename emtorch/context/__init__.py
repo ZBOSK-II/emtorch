@@ -10,6 +10,7 @@ import asyncio
 from types import TracebackType
 from typing import Any, Self, cast
 
+from ..arguments import Arguments
 from ..case.instance import CaseInstance
 from ..config.loader import ConfigLoader
 from ..results import ResultsCollector, ValuePoint
@@ -53,13 +54,13 @@ class CollectorRegistry:
 
 class Context:
 
-    def __init__(self, config: dict[str, Any], mapping: dict[str, str]):
+    def __init__(self, config: dict[str, Any], args: Arguments):
         self._data = DataRegistry()
         self._collectors = CollectorRegistry(self)
         self._config_loader = ConfigLoader()
         self._config_raw = config
         self._results = ResultsCollector(config)
-        self._mapping = mapping
+        self._args = args
         self._first_case_executed = False
 
     @property
@@ -83,8 +84,12 @@ class Context:
         return self._results
 
     @property
+    def arguments(self) -> Arguments:
+        return self._args
+
+    @property
     def mapping(self) -> dict[str, str]:
-        return self._mapping
+        return self.arguments.mapping
 
     @property
     def first_case_executed(self) -> bool:
