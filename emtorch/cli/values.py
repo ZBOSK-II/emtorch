@@ -7,6 +7,7 @@
 """
 
 import argparse
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from sys import stdout
@@ -49,12 +50,20 @@ class ValuesCommand(Command):
             choices=["csv", "text", "latex", "mediawiki", "html", "json"],
             default="csv",
         )
-
-        # filtering values
-        # filtering rows
-        # displayed columns
-        # header
-        #
+        parser.add_argument(
+            "--include",
+            help="""
+include only specified value (can be provided multiple times, supports regular expressions)""",
+            action="append",
+            default=[],
+        )
+        parser.add_argument(
+            "--exclude",
+            help="""
+do not include specified value (can be provided multiple times, supports regular expressions)""",
+            action="append",
+            default=[],
+        )
 
     @staticmethod
     def _case_header(results: Results) -> list[str]:
@@ -68,13 +77,26 @@ class ValuesCommand(Command):
             return [case_id.group, case_id.iteration]
         return [case_id.group]
 
+    @staticmethod
+    def _filter_values(args: argparse.Namespace, results: Results) -> list[str]:
+        values = [v.name for v in results.values]
+        if args.include:
+            included = [re.compile(i) for i in args.include]
+            values = [
+                v for v in values if any(i.fullmatch(v) is not None for i in included)
+            ]
+        if args.exclude:
+            excluded = [re.compile(e) for e in args.exclude]
+            values = [
+                v for v in values if all(e.fullmatch(v) is None for e in excluded)
+            ]
+        return values
+
     def execute(self, args: argparse.Namespace) -> int:
         results = load_results(args.results)
         table = PrettyTable()
-        values = [v.name for v in results.values]
-        table.field_names = self._case_header(results) + [
-            v.name for v in results.values
-        ]
+        values = self._filter_values(args, results)
+        table.field_names = self._case_header(results) + values
         for case in results.cases:
             row: list[str | int | float] = self._case_id(case.case_id)
             row += [case.values.get(v, "") for v in values]
