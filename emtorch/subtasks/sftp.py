@@ -51,23 +51,24 @@ class SftpTask(BasicSubTask):
     async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
         local_path = self._config.local_path.evaluate(context.parent)
         remote_path = self._config.remote_path.evaluate(context.parent)
+        transfer_info = f"{local_path} {self.dir_infix} {remote_path}"
 
         try:
             async with self._config.connection.open() as conn:
                 async with conn.start_sftp_client() as sftp:
+                    context.logger.info(f"Starting transfer: {transfer_info}")
                     await asyncio.wait_for(
                         self.perform_operation(sftp, local_path, remote_path, context),
                         timeout=self._config.timeout,
                     )
+        except ConnectionError as ex:
+            context.logger.error(f"Transfer ({transfer_info}) - connection error: {ex}")
+            return self.Result.ERROR
         except asyncssh.misc.Error as ex:
-            context.logger.error(
-                f"Transfer ({local_path} {self.dir_infix} {remote_path}) failed: {ex}"
-            )
+            context.logger.error(f"Transfer ({transfer_info}) failed: {ex}")
             return self.Result.ERROR
         except TimeoutError:
-            context.logger.warning(
-                f"Transfer ({local_path} {self.dir_infix} {remote_path}) timed out"
-            )
+            context.logger.warning(f"Transfer ({transfer_info}) timed out")
             return self.Result.TIMEOUT
 
         return self.Result.SUCCESS

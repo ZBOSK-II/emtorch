@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
  - results JSON simplified (no aggregations etc., just list of results)
+ - "connection failed" will be reported as error and not break experiment execution
 
 ### Added
  - new `--map` switch to `run` command for introducing user-specified $-strings template variables

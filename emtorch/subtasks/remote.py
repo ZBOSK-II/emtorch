@@ -95,6 +95,9 @@ class Remote(BasicSubTask):
                     )
                     return self.Result.FAILURE
 
+        except ConnectionError as ex:
+            context.logger.error(f"Connection error: {ex}")
+            return self.Result.ERROR
         except asyncssh.misc.Error as ex:
             context.logger.error(f"Error while executing command: {ex}")
             return self.Result.ERROR
