@@ -56,12 +56,10 @@ class ValuesCommand(Command):
         table.field_names = ["Case"] + [v.name for v in results.values]
         for case in results.cases:
             row: list[str | int | float | None] = [str(case.case_id)]
-            row += [case.values.get(v) for v in values]
+            row += [case.values.get(v, "") for v in values]
             table.add_row(row)
 
         with _select_output(args) as output:
             print(table.get_formatted_string(out_format="csv"), file=output)
 
-        # missing rows
-        # missing columns
         return 0
