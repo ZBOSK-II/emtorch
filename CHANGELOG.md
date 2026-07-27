@@ -66,8 +66,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - `"all"` and `"cases"` inside results JSON embedded into `"cases"` to be more clear
  - entries in log will have consistent format for "subtask" name portion of the log
  - added `values` to results (possibility to aggregate values per case)
- - added `logger-int-matcher` and `logger-float-matcher` monitoring subtasks
- - added `file-write` subtask
 
 ### Added
  - `--repeats` argument will allow to repeat test cases for each data specified number of times
@@ -75,7 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - `EMTORCH_DATA_PATH` environment variable added to $-strings templates (contains path to current case data)
  - `EMTORCH_DATA_FILENAME` environment variable added to $-strings templates  (contains file name of the current case data)
  - `sftp-download` and `sftp-upload` subtasks for SFTP operations
- - `file-write` for writing to files
+ - `file-write` subtask for writing to files
+ - `logger-int-matcher` and `logger-float-matcher` monitoring subtasks
 
 ### Dependencies updated
  - mypy bump from 1.20.1 to 2.1.0 [\#53](https://github.com/ZBOSK-II/emtorch/pull/53) [\#55](https://github.com/ZBOSK-II/emtorch/pull/55) [\#59](https://github.com/ZBOSK-II/emtorch/pull/59) ([dependabot](https://github.com/dependabot))
