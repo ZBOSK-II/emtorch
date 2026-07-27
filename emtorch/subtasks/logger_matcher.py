@@ -8,7 +8,7 @@ Module representing collector for extracting values from log.
 
 import logging
 import re
-from typing import Annotated, cast
+from typing import Annotated
 
 from ..config import Doc, configclass
 from ..results import ValuePoint
@@ -49,9 +49,7 @@ class LoggerMatcher[T: ValuePoint](BasicSubTask):
                 match = self._regex.search(r.getMessage())
                 if match is not None:
                     try:
-                        collector.set_current(
-                            cast(T, self._value_type(match.group("value")))
-                        )
+                        collector.set_current(self._value_type(match.group("value")))
                         error = False
                     except ValueError:
                         error = True
