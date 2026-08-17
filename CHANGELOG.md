@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Dependencies updated
  - codespell bump from 2.4.2 to 2.4.3 [\#83](https://github.com/ZBOSK-II/emtorch/pull/83) ([dependabot](https://github.com/dependabot))
  - mypy bump from 2.1.2 to 2.3.0 [\#84](https://github.com/ZBOSK-II/emtorch/pull/84) ([dependabot](https://github.com/dependabot))
+ - pylint bump from 4.0.6 to 4.0.7 [\#86](https://github.com/ZBOSK-II/emtorch/pull/86) ([dependabot](https://github.com/dependabot))
 
 
 ## [3.1.0] - 2026-07-06
