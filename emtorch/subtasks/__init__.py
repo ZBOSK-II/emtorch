@@ -12,7 +12,7 @@ import logging
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from dataclasses import field
-from enum import StrEnum
+from enum import StrEnum, auto
 from importlib.metadata import entry_points
 from typing import (
     TYPE_CHECKING,
@@ -109,6 +109,74 @@ class SubTaskDelays:
         )
 
 
+class RunMode(StrEnum):
+    ALWAYS = auto()
+    NEVER = auto()
+    ONCE = auto()
+    PER_DATA = auto()
+
+    @classmethod
+    def _missing_(cls, value: Any) -> RunMode | None:
+        if isinstance(value, str):
+            normalized = value.replace("-", "_")
+            for member in cls:
+                if member.value == normalized:
+                    return member
+        return None
+
+
+class RunPolicy(ABC):
+    @abstractmethod
+    def should_run(self, context: SubTaskContext) -> bool:
+        return False
+
+    @staticmethod
+    def from_mode(mode: RunMode) -> RunPolicy:
+        match mode:
+            case RunMode.ALWAYS:
+                return AlwaysRunPolicy()
+            case RunMode.NEVER:
+                return NeverRunPolicy()
+            case RunMode.ONCE:
+                return OnceRunPolicy()
+            case RunMode.PER_DATA:
+                return PerDataRunPolicy()
+        raise ValueError(f"Unknown RunMode {mode}")
+
+
+class AlwaysRunPolicy(RunPolicy):
+    def should_run(self, context: SubTaskContext) -> bool:
+        return True
+
+
+class NeverRunPolicy(RunPolicy):
+    def should_run(self, context: SubTaskContext) -> bool:
+        return False
+
+
+class OnceRunPolicy(RunPolicy):
+    def __init__(self) -> None:
+        self._executed = False
+
+    def should_run(self, context: SubTaskContext) -> bool:
+        if self._executed:
+            return False
+        self._executed = True
+        return True
+
+
+class PerDataRunPolicy(RunPolicy):
+    def __init__(self) -> None:
+        self._executed: set[str] = set()
+
+    def should_run(self, context: SubTaskContext) -> bool:
+        identifier = context.case.data.identifier
+        if identifier in self._executed:
+            return False
+        self._executed.add(identifier)
+        return True
+
+
 class SubTaskInstance:
     # pylint: disable=invalid-field-call
     @configclass
@@ -116,6 +184,7 @@ class SubTaskInstance:
         name: str
         type: str
         delays: SubTaskDelays.Config = field(default_factory=SubTaskDelays.Config)
+        when: RunMode = RunMode.ALWAYS
         args: dict[str, Any]
 
     def __init__(
@@ -133,6 +202,8 @@ class SubTaskInstance:
         self._logger = logging.LoggerAdapter(logger, extra={"subtask": self.name})
         self._delays = SubTaskDelays.from_config(config.delays)
 
+        self._when = RunPolicy.from_mode(config.when)
+
     @property
     def name(self) -> str:
         return self._name
@@ -144,10 +215,14 @@ class SubTaskInstance:
     async def execute(self, context: CaseContext) -> None:
         self.logger.info(f"Starting {self.name}")
         subcontext = SubTaskContext(context, self)
-        await self._delays.wait_before(subcontext)
-        result = await self._subtask.execute(subcontext)
-        self._results.collect(result)
-        await self._delays.wait_after(subcontext)
+        if self._when.should_run(subcontext):
+            await self._delays.wait_before(subcontext)
+            result = await self._subtask.execute(subcontext)
+            self._results.collect(result)
+            await self._delays.wait_after(subcontext)
+        else:
+            self.logger.info(f"Skipping {self.name}")
+            self._results.skip()
         self.logger.info(f"Finished {self.name}")
 
 

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - subtasks now have `when` configuration field that allows them to run once or once per data etc.
+
 ### Dependencies updated
  - codespell bump from 2.4.2 to 2.4.3 [\#83](https://github.com/ZBOSK-II/emtorch/pull/83) ([dependabot](https://github.com/dependabot))
  - mypy bump from 2.1.2 to 2.3.1 [\#84](https://github.com/ZBOSK-II/emtorch/pull/84) [\#88](https://github.com/ZBOSK-II/emtorch/pull/88) ([dependabot](https://github.com/dependabot))

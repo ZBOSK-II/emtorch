@@ -37,6 +37,9 @@ class SubTaskResults:
         self._counter[result] += 1
         self._collector.data.current.subtasks[self._name] = result
 
+    def skip(self) -> None:
+        self._collector.data.current.subtasks[self._name] = None
+
     def summary(self) -> str:
         header = f"{self._name}:\n"
         return (
@@ -65,7 +68,7 @@ class ExperimentInfo:
 @dataclass
 class CaseResult:
     case_id: CaseId
-    subtasks: dict[str, str] = field(default_factory=dict)
+    subtasks: dict[str, str | None] = field(default_factory=dict)
     values: dict[str, ValuePoint] = field(default_factory=dict)
 
 

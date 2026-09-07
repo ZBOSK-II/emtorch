@@ -166,6 +166,12 @@ count = 3
 interval = 1
 ```
 
+Each element of a sequence has:
+ * `name` - should be unique in a given sequence, used for results identification
+ * `type` - type of the sub-task (see SubTasks below)
+ * `delays` - (optional) delays before and after execution of the sub-task
+ * `when` - (optional) `always|never|once|per-data`, controls when the sub-task is executed
+
 Template Variables
 ------------------------------------------------------------
 Configuration values support **$-string interpolation** using
