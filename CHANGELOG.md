@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies updated
+ - isort bump from 8.0.1 to 9.0.1 [\#90](https://github.com/ZBOSK-II/emtorch/pull/90) ([dependabot](https://github.com/dependabot))
 
 
 ## [3.2.0] - 2026-09-07
@@ -19,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - codespell bump from 2.4.2 to 2.4.3 [\#83](https://github.com/ZBOSK-II/emtorch/pull/83) ([dependabot](https://github.com/dependabot))
  - mypy bump from 2.1.2 to 2.3.1 [\#84](https://github.com/ZBOSK-II/emtorch/pull/84) [\#88](https://github.com/ZBOSK-II/emtorch/pull/88) ([dependabot](https://github.com/dependabot))
  - pylint bump from 4.0.6 to 4.0.8 [\#86](https://github.com/ZBOSK-II/emtorch/pull/86) [\#89](https://github.com/ZBOSK-II/emtorch/pull/89) ([dependabot](https://github.com/dependabot))
- - isort bump from 8.0.1 to 9.0.1 [\#90](https://github.com/ZBOSK-II/emtorch/pull/90) ([dependabot](https://github.com/dependabot))
 
 
 ## [3.1.0] - 2026-07-06
