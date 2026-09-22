@@ -8,7 +8,7 @@ description="Experiments orchestrator for embedded systems"
 requires-python = ">= 3.14,< 3.15"
 dependencies = [
   "pydantic==2.13.4",
-  "asyncssh==2.23.1",
+  "asyncssh==2.24.0",
   "fieldz==0.2.0",
   "prettytable==3.18.0",
 ]
