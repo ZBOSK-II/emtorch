@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies updated
  - isort bump from 8.0.1 to 9.0.1 [\#90](https://github.com/ZBOSK-II/emtorch/pull/90) ([dependabot](https://github.com/dependabot))
+ - asyncssh bump from 2.23.1 to 2.24.0 [\#91](https://github.com/ZBOSK-II/emtorch/pull/91) ([dependabot](https://github.com/dependabot))
 
 
 ## [3.2.0] - 2026-09-07
