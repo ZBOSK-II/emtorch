@@ -76,7 +76,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 black = "26.5.1"
 codespell = "2.4.3"
-flake8 = "7.3.0"
+flake8 = "7.4.1"
 flake8-pyproject = "1.2.4"
 isort = "9.0.2"
 mypy = "2.4.0"
