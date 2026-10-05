@@ -23,14 +23,9 @@ class CaseDelays:
     @configclass
     class Config:
         between_cases: float | None = None
-        before_actions: float | None = None
 
-    def __init__(self, between_cases: Delay, before_actions: Delay):
+    def __init__(self, between_cases: Delay):
         self._between_cases = between_cases
-        self._before_actions = before_actions
-
-    async def wait_before_actions(self) -> None:
-        await self._before_actions.wait(logger)
 
     async def wait_between_cases(self) -> None:
         await self._between_cases.wait(logger)
@@ -39,7 +34,6 @@ class CaseDelays:
     def from_config(cls, config: Config) -> Self:
         return cls(
             between_cases=Delay(config.between_cases, "between cases"),
-            before_actions=Delay(config.before_actions, "before actions"),
         )
 
 
@@ -77,7 +71,6 @@ class Case:
 
         await self._setups.execute(context)
         async with self._monitoring.monitor(context):
-            await self._delays.wait_before_actions()
             await self._actions.execute(context)
             context.notify_actions_ended()
         await self._checks.execute(context)

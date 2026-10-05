@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+ - `delays.before_actions` settings became obsolete since each subtask can have before/after delay
+
 ### Added
  - `[mappings]` configuration table with default $-strings template variables (can be overridden with `--map`)
  - `--override path.to.key[0]=VALUE` added to possibly override configuration setting from command line

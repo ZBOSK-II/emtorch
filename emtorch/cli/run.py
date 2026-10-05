@@ -73,7 +73,7 @@ class RunCommand(Command):
             action="append",
             type=_parse_kv,
             metavar="path.to.key=value",
-            help="provide configuration keys override (use [n] or .n. to access n-th element of arrays, starting from zero)",
+            help="provide configuration keys override (use [n] or .n. to access n-th element)",
         )
         parser.add_argument(
             "--verbose",

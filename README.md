@@ -83,7 +83,6 @@ Create a minimal configuration file (`config.toml`):
 ``` toml
 [delays]
 between_cases = 0.2
-before_actions = 0.0
 
 [[actions]]
 type = "shell"
@@ -136,7 +135,6 @@ Example configuration structure:
 ``` toml
 [delays]
 between_cases = 0.2
-before_actions = 1.0
 
 [[setups]]
 type = "ping-alive"

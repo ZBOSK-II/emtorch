@@ -3,7 +3,6 @@ EXAMPLE_VAR = "example value"
 
 [delays]
 between_cases = 0.2
-before_actions = 1
 
 [[setups]]
 type = "exec"
