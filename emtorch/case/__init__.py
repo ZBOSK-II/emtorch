@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 class CaseDelays:
     @configclass
     class Config:
-        between_cases: float
-        before_actions: float
+        between_cases: float | None = None
+        before_actions: float | None = None
 
     def __init__(self, between_cases: Delay, before_actions: Delay):
         self._between_cases = between_cases
@@ -47,7 +47,7 @@ class Case:
     # pylint: disable=invalid-field-call
     @configclass
     class Config:
-        delays: CaseDelays.Config
+        delays: CaseDelays.Config = field(default_factory=CaseDelays.Config)
         setups: SubTasks.Config = field(default_factory=list)
         monitoring: SubTasks.Config = field(default_factory=list)
         actions: SubTasks.Config = field(default_factory=list)

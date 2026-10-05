@@ -88,8 +88,8 @@ class BasicSubTask(TypedSubTask[BasicResult]):
 class SubTaskDelays:
     @configclass
     class Config:
-        before: float = 0
-        after: float = 0
+        before: float | None = None
+        after: float | None = None
 
     def __init__(self, before: Delay, after: Delay):
         self._before = before

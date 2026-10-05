@@ -20,9 +20,10 @@ class Delay:
     """
     Class representing single 'delay' in the experiment.
     Forces experiment to wait for a given number of seconds.
+    Value of 0 or None means no delay.
     """
 
-    def __init__(self, value: float, name: str):
+    def __init__(self, value: float | None, name: str):
         self._value = value
         self._name = name
 
@@ -31,7 +32,7 @@ class Delay:
         return self._name
 
     async def wait(self, logger: LoggerAdapter | logging.Logger) -> None:
-        if self._value == 0:
+        if not self._value:
             return
         logger.info(f"Waiting {self.name} ({self._value}s)")
         await asyncio.sleep(self._value)

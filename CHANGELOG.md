@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+ - case `delays` configuration is now optional; a delay of `0` or an unset delay means no waiting
+
 ### Dependencies updated
  - asyncssh bump from 2.23.1 to 2.24.0 [\#91](https://github.com/ZBOSK-II/emtorch/pull/91) ([dependabot](https://github.com/dependabot))
  - flake8 bump from 7.3.0 to 7.4.1 [\#92](https://github.com/ZBOSK-II/emtorch/pull/92) ([dependabot](https://github.com/dependabot))
