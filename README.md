@@ -183,7 +183,16 @@ Available template variables:
 - `$EMTORCH_DATA_PATH` - full path to the case data file
 - `$EMTORCH_DATA_FILENAME` - filename only of the case data
 
-Additional variables can be introduced using `--map` argument.
+Additional variables can be defined in the `[mappings]` table of
+the configuration file. Values must be strings:
+``` toml
+[mappings]
+TARGET_HOST = "192.168.1.10"
+```
+
+Mappings can also be provided (or the ones from the configuration
+file overridden) using `--map KEY=VALUE` argument, e.g.
+`--map TARGET_HOST=10.0.0.1`.
 
 Example usage:
 ``` toml

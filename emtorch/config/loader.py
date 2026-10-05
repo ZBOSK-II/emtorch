@@ -41,3 +41,7 @@ class ConfigLoader:
         assert dataclasses.is_dataclass(config_type)
         adapter = self._cache.get_adapter(config_type)
         return adapter.validate_python(data, extra="forbid")
+
+    def from_value[T](self, value_type: type[T], data: Any) -> T:
+        adapter = self._cache.get_adapter(value_type)
+        return adapter.validate_python(data, strict=True)

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - `[mappings]` configuration table with default $-strings template variables (can be overridden with `--map`)
+
 ### Changed
  - case `delays` configuration is now optional; a delay of `0` or an unset delay means no waiting
 

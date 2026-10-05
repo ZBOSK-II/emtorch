@@ -48,6 +48,7 @@ class Case:
     @configclass
     class Config:
         delays: CaseDelays.Config = field(default_factory=CaseDelays.Config)
+        mappings: dict[str, str] = field(default_factory=dict)
         setups: SubTasks.Config = field(default_factory=list)
         monitoring: SubTasks.Config = field(default_factory=list)
         actions: SubTasks.Config = field(default_factory=list)

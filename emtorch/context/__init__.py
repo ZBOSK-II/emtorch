@@ -55,7 +55,7 @@ class CollectorRegistry:
         return result
 
 
-class Context:
+class Context:  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, config_raw: dict[str, Any], args: Arguments):
         # local import to avoid import cycle (case depends on context)
@@ -66,6 +66,7 @@ class Context:
         self._config_loader = ConfigLoader()
         self._config = self._config_loader.from_dict(Case.Config, config_raw)
         self._args = args
+        self._mapping = self.config.mappings | args.mapping
         self._results = ResultsCollector(config_raw, args)
         self._first_case_executed = False
 
@@ -95,7 +96,7 @@ class Context:
 
     @property
     def mapping(self) -> dict[str, str]:
-        return self.arguments.mapping
+        return self._mapping
 
     @property
     def first_case_executed(self) -> bool:
