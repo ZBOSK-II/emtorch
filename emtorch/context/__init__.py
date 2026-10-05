@@ -8,13 +8,16 @@ Subpackage representing context of the experiment.
 
 import asyncio
 from types import TracebackType
-from typing import Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from ..arguments import Arguments
 from ..case.instance import CaseInstance
 from ..config.loader import ConfigLoader
 from ..results import ResultsCollector, ValuePoint
 from ..results.collector import Collector
+
+if TYPE_CHECKING:
+    from ..case import Case
 
 
 class DataRegistry:
@@ -54,18 +57,21 @@ class CollectorRegistry:
 
 class Context:
 
-    def __init__(self, config: dict[str, Any], args: Arguments):
+    def __init__(self, config_raw: dict[str, Any], args: Arguments):
+        # local import to avoid import cycle (case depends on context)
+        from ..case import Case  # pylint: disable=import-outside-toplevel
+
         self._data = DataRegistry()
         self._collectors = CollectorRegistry(self)
         self._config_loader = ConfigLoader()
-        self._config_raw = config
+        self._config = self._config_loader.from_dict(Case.Config, config_raw)
         self._args = args
-        self._results = ResultsCollector(config, args)
+        self._results = ResultsCollector(config_raw, args)
         self._first_case_executed = False
 
     @property
-    def config_raw(self) -> dict[str, Any]:
-        return self._config_raw
+    def config(self) -> Case.Config:
+        return self._config
 
     @property
     def config_loader(self) -> ConfigLoader:

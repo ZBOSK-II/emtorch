@@ -85,12 +85,11 @@ class Case:
 
     @classmethod
     def create(cls, context: Context) -> Self:
-        config = context.config_loader.from_dict(Case.Config, context.config_raw)
         builder = SubTasksBuilder(context.config_loader, context.results)
         return cls(
-            delays=CaseDelays.from_config(config.delays),
-            setups=builder.build("setups", config.setups),
-            monitoring=builder.build("monitoring", config.monitoring),
-            actions=builder.build("actions", config.actions),
-            checks=builder.build("checks", config.checks),
+            delays=CaseDelays.from_config(context.config.delays),
+            setups=builder.build("setups", context.config.setups),
+            monitoring=builder.build("monitoring", context.config.monitoring),
+            actions=builder.build("actions", context.config.actions),
+            checks=builder.build("checks", context.config.checks),
         )
