@@ -40,8 +40,10 @@ class ConfigLoader:
 
     @staticmethod
     def apply_overrides(
-        config: Any, overrides: list[tuple[str, str]]
+        config: Any, overrides: list[tuple[str, str]] | None
     ) -> dict[str, Any]:
+        if not overrides:
+            return cast(dict[str, Any], config)
         base = OmegaConf.create(config)
         for k, v in overrides:
             OmegaConf.update(base, k, v)
