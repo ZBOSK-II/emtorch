@@ -1,5 +1,5 @@
 [mappings]
-GREETING = "hello"
+EXAMPLE_VAR = "example value"
 
 [delays]
 between_cases = 0.2
@@ -11,7 +11,7 @@ name = "setup"
 
 [setups.args]
 program = "echo"
-args = ["SETUP $EMTORCH_CASE_ID $GREETING"]
+args = ["SETUP $EMTORCH_CASE_ID ($EXAMPLE_VAR)"]
 
 [[setups]]
 type = "ping-alive"

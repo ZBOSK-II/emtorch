@@ -9,8 +9,9 @@ Module interacting with configuration in files.
 import dataclasses
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+from omegaconf import OmegaConf
 from pydantic import TypeAdapter
 
 
@@ -36,6 +37,15 @@ class ConfigLoader:
     def load_toml(path: Path) -> Any:
         with path.open("rb") as file:
             return tomllib.load(file)
+
+    @staticmethod
+    def apply_overrides(
+        config: Any, overrides: list[tuple[str, str]]
+    ) -> dict[str, Any]:
+        base = OmegaConf.create(config)
+        for k, v in overrides:
+            OmegaConf.update(base, k, v)
+        return cast(dict[str, Any], OmegaConf.to_container(base))
 
     def from_dict[T](self, config_type: type[T], data: dict[str, Any]) -> T:
         assert dataclasses.is_dataclass(config_type)

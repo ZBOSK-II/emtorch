@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - `[mappings]` configuration table with default $-strings template variables (can be overridden with `--map`)
+ - `--override path.to.key[0]=VALUE` added to possibly override configuration setting from command line
 
 ### Changed
  - case `delays` configuration is now optional; a delay of `0` or an unset delay means no waiting

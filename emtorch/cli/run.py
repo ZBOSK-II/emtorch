@@ -19,7 +19,7 @@ from ..version import VERSION
 from .command import Command
 
 
-def _parse_mapping(s: str) -> tuple[str, str]:
+def _parse_kv(s: str) -> tuple[str, str]:
     try:
         key, value = s.split("=", 1)
         return key, value
@@ -64,9 +64,16 @@ class RunCommand(Command):
         parser.add_argument(
             "--map",
             action="append",
-            type=_parse_mapping,
+            type=_parse_kv,
             metavar="KEY=VALUE",
             help="provide mapping for $-string interpolation",
+        )
+        parser.add_argument(
+            "--override",
+            action="append",
+            type=_parse_kv,
+            metavar="path.to.key=value",
+            help="provide configuration keys override (use [n] or .n. to access n-th element of arrays, starting from zero)",
         )
         parser.add_argument(
             "--verbose",
@@ -96,6 +103,7 @@ class RunCommand(Command):
             data=self.__parse_data(args.data),
             output_prefix=args.output_prefix + date_suffix,
             config=args.config,
+            config_overrides=args.override,
             repeat_mode=RepeatMode(args.repeat_mode),
             repeats=args.repeats,
             mapping=dict(args.map or []),
@@ -134,7 +142,10 @@ class RunCommand(Command):
         run_args = self.__parse_args(args)
         self.__setup_logger(run_args.output(".log"), run_args.verbose)
 
-        results = emtorch_exec(run_args, ConfigLoader.load_toml(run_args.config))
+        config = ConfigLoader.load_toml(run_args.config)
+        config = ConfigLoader.apply_overrides(config, run_args.config_overrides)
+
+        results = emtorch_exec(run_args, config)
 
         logging.getLogger().info(f"Results:\n{results.summary()}")
 

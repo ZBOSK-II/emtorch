@@ -21,6 +21,7 @@ class Arguments:
     data: list[Path]
     output_prefix: str
     config: Path
+    config_overrides: list[tuple[str, str]]
     repeats: int
     repeat_mode: RepeatMode
     verbose: bool

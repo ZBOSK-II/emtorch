@@ -69,6 +69,8 @@ emtorch run --help
 Additional options include:
 - `--repeats N` - repeat each test case N times
 - `--repeat-mode {aabb,abab}` - control repetition order
+- `--map KEY=VALUE` - introduces template variable (see below)
+- `--override KEY=VALUE` - overrides configuration setting from TOML
 
 Quick Start
 ------------------------------------------------------------

@@ -21,6 +21,7 @@ def _given_context(config: dict[str, Any], mapping: dict[str, str]) -> Context:
         data=[],
         output_prefix="",
         config=Path("."),
+        config_overrides=[],
         repeats=1,
         repeat_mode=RepeatMode.ABAB,
         verbose=True,

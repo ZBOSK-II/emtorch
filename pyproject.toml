@@ -11,6 +11,7 @@ dependencies = [
   "asyncssh==2.24.0",
   "fieldz==0.2.0",
   "prettytable==3.18.0",
+  "omegaconf==2.3.1",
 ]
 authors = [
     {name = "Konrad Grochowski", email = "Konrad.Grochowski@pw.edu.pl"},
@@ -125,6 +126,7 @@ disable = [
   "missing-class-docstring", # TODO ?
   "logging-fstring-interpolation",
   "too-few-public-methods",
+  "too-many-instance-attributes",
 ]
 enable = [
   "useless-suppression",

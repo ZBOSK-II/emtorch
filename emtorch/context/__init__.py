@@ -55,7 +55,7 @@ class CollectorRegistry:
         return result
 
 
-class Context:  # pylint: disable=too-many-instance-attributes
+class Context:
 
     def __init__(self, config_raw: dict[str, Any], args: Arguments):
         # local import to avoid import cycle (case depends on context)
