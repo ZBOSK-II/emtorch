@@ -75,7 +75,7 @@ poetry-plugin-export = ">=1.9"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-black = "26.5.1"
+black = "26.10.1"
 codespell = "2.4.3"
 flake8 = "7.4.1"
 flake8-pyproject = "1.2.4"
