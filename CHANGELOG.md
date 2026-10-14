@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies updated
+ - pylint bump from 4.1.1 to 4.1.2 [\#95](https://github.com/ZBOSK-II/emtorch/pull/98) ([dependabot](https://github.com/dependabot))
+ - black bump from 26.5.1 to 26.10.0 [\#95](https://github.com/ZBOSK-II/emtorch/pull/97) ([dependabot](https://github.com/dependabot))
+
 
 ## [3.3.1] - 2026-10-05
 
