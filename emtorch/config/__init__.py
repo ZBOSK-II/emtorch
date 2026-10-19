@@ -7,7 +7,8 @@ Module containing types related to experiment configuration.
 """
 
 import dataclasses
-from typing import dataclass_transform
+from enum import StrEnum
+from typing import Any, dataclass_transform
 
 
 @dataclass_transform(eq_default=False, frozen_default=True, kw_only_default=True)
@@ -18,3 +19,14 @@ def configclass[T](cls: type[T]) -> type[T]:
 @dataclasses.dataclass(frozen=True)
 class Doc:
     text: str
+
+
+class ConfigEnum(StrEnum):
+    @classmethod
+    def _missing_(cls, value: Any) -> StrEnum | None:
+        if isinstance(value, str):
+            normalized = value.replace("-", "_")
+            for member in cls:
+                if member.value == normalized:
+                    return member
+        return None

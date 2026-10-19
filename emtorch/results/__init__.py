@@ -27,18 +27,19 @@ class SubTaskResults:
         self._name = name
         self._collector = collector
         self._success = results[0]
-        self._counter: dict[str, int] = {}
-        for r in results:
-            self._counter[r] = 0
+        self._counter: dict[str, int] = {r: 0 for r in results}
 
     def collect(self, result: str) -> None:
-        if result != self._success:
+        if not self.is_success(result):
             self._collector.failed_count += 1
         self._counter[result] += 1
         self._collector.data.current.subtasks[self._name] = result
 
     def skip(self) -> None:
         self._collector.data.current.subtasks[self._name] = None
+
+    def is_success(self, result: str) -> bool:
+        return result == self._success
 
     def summary(self) -> str:
         header = f"{self._name}:\n"

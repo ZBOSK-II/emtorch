@@ -26,7 +26,7 @@ from typing import (
 )
 
 from ..case.instance import CaseInstance
-from ..config import configclass
+from ..config import ConfigEnum, configclass
 from ..config.loader import ConfigLoader
 from ..context import (
     CaseContext,
@@ -109,26 +109,17 @@ class SubTaskDelays:
         )
 
 
-class RunMode(StrEnum):
+class RunMode(ConfigEnum):
     ALWAYS = auto()
     NEVER = auto()
     ONCE = auto()
     PER_DATA = auto()
 
-    @classmethod
-    def _missing_(cls, value: Any) -> RunMode | None:
-        if isinstance(value, str):
-            normalized = value.replace("-", "_")
-            for member in cls:
-                if member.value == normalized:
-                    return member
-        return None
-
 
 class RunPolicy(ABC):
     @abstractmethod
     def should_run(self, context: SubTaskContext) -> bool:
-        return False
+        raise NotImplementedError()
 
     @staticmethod
     def from_mode(mode: RunMode) -> RunPolicy:
@@ -177,6 +168,40 @@ class PerDataRunPolicy(RunPolicy):
         return True
 
 
+class FailureMode(ConfigEnum):
+    PROCEED = auto()
+    SKIP_CASE = auto()
+    END_EXPERIMENT = auto()
+
+
+class ExecuteStatus(StrEnum):
+    NOMINAL = auto()
+    SKIP_CASE = auto()
+    END_EXPERIMENT = auto()
+
+
+class FailurePolicy:
+    def __init__(self, mode: FailureMode, logger_adapter: LoggerAdapter):
+        self._mode = mode
+        self._logger = logger_adapter
+
+    def on_failure(self) -> ExecuteStatus:
+        match self._mode:
+            case FailureMode.PROCEED:
+                return ExecuteStatus.NOMINAL
+            case FailureMode.SKIP_CASE:
+                self._logger.error("Task failed, skipping case")
+                return ExecuteStatus.SKIP_CASE
+            case FailureMode.END_EXPERIMENT:
+                self._logger.critical("Critical task failed, ending experiment")
+                return ExecuteStatus.END_EXPERIMENT
+        raise ValueError(f"Unknown RunMode {self._mode}")
+
+    @staticmethod
+    def from_mode(mode: FailureMode, logger_adapter: LoggerAdapter) -> FailurePolicy:
+        return FailurePolicy(mode, logger_adapter)
+
+
 class SubTaskInstance:
     # pylint: disable=invalid-field-call
     @configclass
@@ -185,6 +210,7 @@ class SubTaskInstance:
         type: str
         delays: SubTaskDelays.Config = field(default_factory=SubTaskDelays.Config)
         when: RunMode = RunMode.ALWAYS
+        on_failure: FailureMode = FailureMode.PROCEED
         args: dict[str, Any]
 
     def __init__(
@@ -203,6 +229,7 @@ class SubTaskInstance:
         self._delays = SubTaskDelays.from_config(config.delays)
 
         self._when = RunPolicy.from_mode(config.when)
+        self._on_failure = FailurePolicy.from_mode(config.on_failure, self._logger)
 
     @property
     def name(self) -> str:
@@ -212,18 +239,30 @@ class SubTaskInstance:
     def logger(self) -> LoggerAdapter:
         return self._logger
 
-    async def execute(self, context: CaseContext) -> None:
+    async def execute(self, context: CaseContext) -> ExecuteStatus:
         self.logger.info(f"Starting {self.name}")
         subcontext = SubTaskContext(context, self)
-        if self._when.should_run(subcontext):
-            await self._delays.wait_before(subcontext)
-            result = await self._subtask.execute(subcontext)
-            self._results.collect(result)
-            await self._delays.wait_after(subcontext)
-        else:
-            self.logger.info(f"Skipping {self.name}")
-            self._results.skip()
+        result = await (
+            self._run(subcontext) if self._when.should_run(subcontext) else self._skip()
+        )
         self.logger.info(f"Finished {self.name}")
+        return result
+
+    async def _run(self, context: SubTaskContext) -> ExecuteStatus:
+        await self._delays.wait_before(context)
+        result = await self._subtask.execute(context)
+        self._results.collect(result)
+        await self._delays.wait_after(context)
+        return (
+            ExecuteStatus.NOMINAL
+            if self._results.is_success(result)
+            else self._on_failure.on_failure()
+        )
+
+    async def _skip(self) -> ExecuteStatus:
+        self.logger.info(f"Skipping {self.name}")
+        self._results.skip()
+        return ExecuteStatus.NOMINAL
 
 
 class SubTaskContext:
