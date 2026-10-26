@@ -7,11 +7,12 @@ Module for representing SSH connection configuration.
 """
 
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
-
-import asyncssh
+from typing import TYPE_CHECKING, AsyncIterator
 
 from ..config import configclass
+
+if TYPE_CHECKING:
+    import asyncssh
 
 
 @configclass
@@ -24,6 +25,9 @@ class ConnectionConfig:
 
     @asynccontextmanager
     async def open(self) -> AsyncIterator[asyncssh.SSHClientConnection]:
+        # deferred, as importing asyncssh is slow and not needed for configuration only
+        import asyncssh  # pylint: disable=import-outside-toplevel
+
         async with asyncssh.connect(
             host=self.host,
             port=self.port,
