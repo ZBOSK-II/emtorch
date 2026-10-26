@@ -27,12 +27,11 @@ from typing import (
 
 from ..config import configclass
 from ..delay import Delay
-from ..results.basic import BasicResult
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from ..case.instance import CaseInstance
+    from ..case import CaseInstance
     from ..config.loader import ConfigLoader
     from ..context import (
         CaseContext,
@@ -72,6 +71,13 @@ class TypedSubTask[T: StrEnum](SubTask):
     @abstractmethod
     async def execute(self, context: SubTaskContext) -> T:
         pass
+
+
+class BasicResult(StrEnum):
+    SUCCESS = auto()
+    FAILURE = auto()
+    ERROR = auto()
+    TIMEOUT = auto()
 
 
 class BasicSubTask(TypedSubTask[BasicResult]):

@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+ - `emtorch.execute` Python module  - experiment execution moved to `emtorch.experiment.execute`
+
 ### Added
  - shell completions `shell-completions` command
 

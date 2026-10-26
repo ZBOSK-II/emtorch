@@ -21,7 +21,7 @@ from .command import Command
 if TYPE_CHECKING:
     import argparse
 
-    from ..case.instance import CaseId
+    from ..case import CaseId
     from ..results import Results
 
 

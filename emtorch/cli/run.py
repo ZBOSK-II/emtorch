@@ -13,9 +13,9 @@ from pathlib import Path
 
 from argcomplete.completers import FilesCompleter
 
-from .. import execute as emtorch_exec
 from ..arguments import Arguments, RepeatMode
 from ..config.loader import ConfigLoader
+from ..experiment import execute
 from ..results.file import write_results
 from ..version import VERSION
 from .command import Command
@@ -149,7 +149,7 @@ class RunCommand(Command):
         config = ConfigLoader.load_toml(run_args.config)
         config = ConfigLoader.apply_overrides(config, run_args.config_overrides)
 
-        results = emtorch_exec(run_args, config)
+        results = execute(run_args, config)
 
         logging.getLogger().info(f"Results:\n{results.summary()}")
 

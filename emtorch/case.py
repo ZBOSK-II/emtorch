@@ -7,17 +7,89 @@ Module representing "case" - a single instance of the experiment execution.
 """
 
 import logging
-from dataclasses import field
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Self
 
-from ..config import configclass
-from ..delay import Delay
-from ..subtasks import SubTasks, SubTasksBuilder
+from .arguments import Arguments, RepeatMode
+from .config import configclass
+from .delay import Delay
+from .subtasks import SubTasks, SubTasksBuilder
 
 if TYPE_CHECKING:
-    from ..context import CaseContext, Context
+    from pathlib import Path
+
+    from .context import CaseContext, Context
 
 logger = logging.getLogger(__name__)
+
+
+class CaseData:
+    def __init__(self, path: Path):
+        self._path = path
+        self._id = str(path)
+        self._contents: bytes | None = None
+
+    @property
+    def path(self) -> Path:
+        return self._path
+
+    @property
+    def identifier(self) -> str:
+        return self._id
+
+    @property
+    def contents(self) -> bytes:
+        if self._contents is None:
+            logger.info(f"Opening {self._path}")
+            with self._path.open("rb") as file:
+                self._contents = file.read()
+        return self._contents
+
+
+@dataclass
+class CaseId:
+    group: str
+    iteration: int | None
+
+    def __repr__(self) -> str:
+        if self.iteration:
+            return f"{self.group}[{self.iteration}]"
+        return self.group
+
+    @staticmethod
+    def from_id(identifier: str) -> CaseId:
+        return CaseId(identifier, None)
+
+
+class CaseInstance:
+    def __init__(self, case_id: CaseId, data: CaseData):
+        self._id = case_id
+        self._data = data
+
+    @property
+    def identifier(self) -> CaseId:
+        return self._id
+
+    @property
+    def data(self) -> CaseData:
+        return self._data
+
+    @staticmethod
+    def list_from(args: Arguments) -> list[CaseInstance]:
+        data = [CaseData(p) for p in args.data]
+
+        if args.repeats < 2:
+            return [CaseInstance(CaseId.from_id(d.identifier), d) for d in data]
+
+        match args.repeat_mode:
+            case RepeatMode.AABB:
+                pairs = ((d, i) for d in data for i in range(args.repeats))
+            case RepeatMode.ABAB:
+                pairs = ((d, i) for i in range(args.repeats) for d in data)
+            case _:
+                raise ValueError(f"Unsupported repeat mode: {args.repeat_mode!r}")
+
+        return [CaseInstance(CaseId(d.identifier, i + 1), d) for d, i in pairs]
 
 
 # pylint: disable=duplicate-code

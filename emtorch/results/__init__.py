@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from ..arguments import Arguments
-from ..case.instance import CaseId
+from ..case import CaseId
 from ..version import VERSION
 
 if TYPE_CHECKING:

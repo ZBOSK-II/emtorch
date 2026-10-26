@@ -9,7 +9,7 @@ case module tests.
 from pathlib import Path
 
 from emtorch.arguments import Arguments, RepeatMode
-from emtorch.case.instance import CaseInstance
+from emtorch.case import CaseInstance
 
 
 def _given_data(*args: str) -> Arguments:
