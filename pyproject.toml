@@ -84,6 +84,8 @@ isort = "9.0.2"
 mypy = "2.4.0"
 pylint = "4.1.3"
 pytest = "9.1.1"
+prysk = "0.20.0"
+pytest-prysk = "0.4.0"
 
 [tool.mypy]
 strict = true

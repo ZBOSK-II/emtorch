@@ -1,0 +1,44 @@
+[mappings]
+GREETING = "hello"
+
+[[setups]]
+type = "exec"
+name = "setup"
+
+[setups.args]
+program = "echo"
+args = ["SETUP $EMTORCH_CASE_ID $GREETING"]
+
+[[monitoring]]
+type = "logger-int-matcher"
+name = "count"
+
+[monitoring.args]
+value = "count"
+pattern = "count=(?P<value>\\d+)"
+subtask = "actions.process"
+
+[[monitoring]]
+type = "logger-int-matcher"
+name = "size"
+
+[monitoring.args]
+value = "size"
+pattern = "size=(?P<value>\\d+)"
+subtask = "actions.process"
+
+[[actions]]
+type = "shell"
+name = "process"
+
+[actions.args]
+cmd = "cat $EMTORCH_DATA_PATH"
+
+[[checks]]
+type = "file-write"
+name = "report"
+
+[checks.args]
+path = "report.txt"
+append = true
+contents = "$EMTORCH_CASE_ID done\n"
