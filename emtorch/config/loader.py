@@ -8,11 +8,13 @@ Module interacting with configuration in files.
 
 import dataclasses
 import tomllib
-from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from omegaconf import OmegaConf
 from pydantic import TypeAdapter
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TypeAdapterCache:

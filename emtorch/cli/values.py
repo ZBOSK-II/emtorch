@@ -6,20 +6,23 @@
 'values' command implementation.
 """
 
-import argparse
 import re
 from contextlib import contextmanager
 from pathlib import Path
 from sys import stdout
-from typing import Iterator, TextIO
+from typing import TYPE_CHECKING, Iterator, TextIO
 
 from argcomplete.completers import FilesCompleter
 from prettytable import PrettyTable
 
-from ..case.instance import CaseId
-from ..results import Results
 from ..results.file import load_results
 from .command import Command
+
+if TYPE_CHECKING:
+    import argparse
+
+    from ..case.instance import CaseId
+    from ..results import Results
 
 
 @contextmanager

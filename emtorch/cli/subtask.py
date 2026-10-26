@@ -6,14 +6,16 @@
 'subtask' command implementation.
 """
 
-import argparse
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from argcomplete.completers import BaseCompleter
 
 from ..config.docgen import fields_descriptions
 from ..subtasks import SubTask, SubTasksLibrary
 from .command import Command
+
+if TYPE_CHECKING:
+    import argparse
 
 
 class _NamesCompleter(BaseCompleter):

@@ -25,25 +25,26 @@ from typing import (
     cast,
 )
 
-from ..case.instance import CaseInstance
 from ..config import configclass
-from ..config.loader import ConfigLoader
-from ..context import (
-    CaseContext,
-    CollectorRegistry,
-    Context,
-    DataRegistry,
-)
 from ..delay import Delay
-from ..results import (
-    ResultsCollector,
-    SubTaskResults,
-)
 from ..results.basic import BasicResult
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from ..case.instance import CaseInstance
+    from ..config.loader import ConfigLoader
+    from ..context import (
+        CaseContext,
+        CollectorRegistry,
+        Context,
+        DataRegistry,
+    )
+    from ..results import (
+        ResultsCollector,
+        SubTaskResults,
+    )
+
     LoggerAdapter = logging.LoggerAdapter[logging.Logger]
 else:
     LoggerAdapter = logging.LoggerAdapter

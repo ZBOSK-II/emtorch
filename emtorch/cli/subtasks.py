@@ -6,10 +6,13 @@
 'subtasks' command implementation.
 """
 
-import argparse
+from typing import TYPE_CHECKING
 
 from ..subtasks import SubTasksLibrary
 from .command import Command
+
+if TYPE_CHECKING:
+    import argparse
 
 
 class SubTasksCommand(Command):

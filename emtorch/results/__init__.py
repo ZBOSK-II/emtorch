@@ -9,12 +9,14 @@ Module representing experiment results.
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..arguments import Arguments
 from ..case.instance import CaseId
 from ..version import VERSION
+
+if TYPE_CHECKING:
+    from enum import StrEnum
 
 type ValuePoint = int | float
 

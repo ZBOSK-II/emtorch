@@ -8,13 +8,15 @@ Main module of the application.
 
 import asyncio
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from .arguments import Arguments
 from .case import Case
 from .case.instance import CaseInstance
 from .context import Context
-from .results import ResultsCollector
+
+if TYPE_CHECKING:
+    from .arguments import Arguments
+    from .results import ResultsCollector
 
 logger = logging.getLogger(__name__)
 

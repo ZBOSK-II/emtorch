@@ -7,17 +7,18 @@ Subpackage representing context of the experiment.
 """
 
 import asyncio
-from types import TracebackType
 from typing import TYPE_CHECKING, Any, Self, cast
 
-from ..arguments import Arguments
-from ..case.instance import CaseInstance
 from ..config.loader import ConfigLoader
 from ..results import ResultsCollector, ValuePoint
 from ..results.collector import Collector
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
+    from ..arguments import Arguments
     from ..case import Case
+    from ..case.instance import CaseInstance
 
 
 class DataRegistry:

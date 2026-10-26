@@ -6,11 +6,14 @@
 Module responsible for results file management.
 """
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import TypeAdapter
 
 from . import Results
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def write_results(path: Path, results: Results) -> None:

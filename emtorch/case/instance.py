@@ -8,9 +8,12 @@ Module representing specific case instance (with id and data).
 
 import logging
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ..arguments import Arguments, RepeatMode
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

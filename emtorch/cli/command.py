@@ -6,11 +6,13 @@
 CLI command module.
 """
 
-import argparse
 from abc import ABC, abstractmethod
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
-from argcomplete.completers import BaseCompleter
+if TYPE_CHECKING:
+    import argparse
+
+    from argcomplete.completers import BaseCompleter
 
 
 class Command(ABC):

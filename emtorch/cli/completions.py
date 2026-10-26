@@ -6,14 +6,17 @@
 'shell-completions' command implementation.
 """
 
-import argparse
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from argcomplete.completers import FilesCompleter
 from argcomplete.shell_integration import shellcode
 
 from .command import Command
+
+if TYPE_CHECKING:
+    import argparse
 
 EXECUTABLE = "emtorch"
 SHELLS = ("bash", "zsh", "fish", "tcsh", "powershell")

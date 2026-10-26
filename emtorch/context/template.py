@@ -8,12 +8,14 @@ Provides Template class based on string.Template ($-string) but case-sensitive.
 
 from re import RegexFlag
 from string import Template as StringTemplate
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from pydantic import GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
-from . import CaseContext
+if TYPE_CHECKING:
+    from pydantic import GetCoreSchemaHandler
+
+    from . import CaseContext
 
 
 class Template(StringTemplate):

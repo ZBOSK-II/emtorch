@@ -8,12 +8,14 @@ Module representing "case" - a single instance of the experiment execution.
 
 import logging
 from dataclasses import field
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from ..config import configclass
-from ..context import CaseContext, Context
 from ..delay import Delay
 from ..subtasks import SubTasks, SubTasksBuilder
+
+if TYPE_CHECKING:
+    from ..context import CaseContext, Context
 
 logger = logging.getLogger(__name__)
 
