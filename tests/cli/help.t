@@ -8,7 +8,7 @@ Top level help and version.
   positional arguments:
     COMMAND              emtorch command to be executed (listed below)
       run                execute the experiment using configuration
-      subtasks           lists all available subcommands
+      subtasks           lists all available subtasks
       subtask            provides documentation for the given task
       values             extracts values from results
       shell-completions  installs shell completion script

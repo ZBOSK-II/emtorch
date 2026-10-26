@@ -45,9 +45,7 @@ class Cli:
         self.__add_command(
             RunCommand, "run", "execute the experiment using configuration"
         )
-        self.__add_command(
-            SubTasksCommand, "subtasks", "lists all available subcommands"
-        )
+        self.__add_command(SubTasksCommand, "subtasks", "lists all available subtasks")
         self.__add_command(
             SubTaskCommand, "subtask", "provides documentation for the given task"
         )
