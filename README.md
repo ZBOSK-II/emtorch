@@ -40,6 +40,20 @@ pipx install emtorch
 uv tool install emtorch
 ```
 
+**Shell completion:**
+``` shell
+emtorch shell-completions
+```
+
+The shell is detected from `$SHELL`. To pick one explicitly, use
+`--shell` (`bash`, `zsh`, `fish`, `tcsh`, or `powershell`). The script
+is installed in a per-user location: `~/.local/share/bash-completion/completions/`
+for bash, `~/.config/fish/completions/` for fish, and
+`~/.local/share/zsh/site-functions/` for zsh (this directory must be
+added to `$fpath`). Use `--path` to choose a different destination, or
+`--print` to write the script to the standard output instead, e.g.
+`source <(emtorch shell-completions --print)`.
+
 Usage
 ------------------------------------------------------------
 To run experiments, use the `run` subcommand:

@@ -10,8 +10,11 @@ import argparse
 import sys
 from typing import cast
 
+import argcomplete
+
 from ..version import VERSION
 from .command import Command
+from .completions import ShellCompletionsCommand
 from .run import RunCommand
 from .subtask import SubTaskCommand
 from .subtasks import SubTasksCommand
@@ -49,6 +52,11 @@ class Cli:
             SubTaskCommand, "subtask", "provides documentation for the given task"
         )
         self.__add_command(ValuesCommand, "values", "extracts values from results")
+        self.__add_command(
+            ShellCompletionsCommand,
+            "shell-completions",
+            "installs shell completion script",
+        )
 
     def __add_command[T: Command](
         self, command: type[T], name: str, description: str
@@ -60,6 +68,7 @@ class Cli:
         parser.set_defaults(command=cmd.execute)
 
     def execute(self) -> int:
+        argcomplete.autocomplete(self._parser)
         args = self._parser.parse_args()
         try:
             return cast(int, args.command(args))

@@ -24,6 +24,21 @@ files = [
 ]
 
 [[package]]
+name = "argcomplete"
+version = "3.7.2"
+description = "Bash tab completion for argparse"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "argcomplete-3.7.2-py3-none-any.whl", hash = "sha256:6029205678bdd9c1c728a155f5f9ecf5812393f969eef58807641a2bc2aa5b19"},
+    {file = "argcomplete-3.7.2.tar.gz", hash = "sha256:aad8b69a0b9969edb62db0d1752354c0d50717b10e0cbb00e2a958381b9fc6b9"},
+]
+
+[package.extras]
+test = ["coverage", "mypy", "pexpect", "ruff", "wheel"]
+
+[[package]]
 name = "ast-serialize"
 version = "0.12.1"
 description = "Python bindings for mypy AST serialization"
@@ -1297,4 +1312,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">= 3.14,< 3.15"
-content-hash = "db2884101d755c48c60942fbffab70d96a21bdb6ddea6c20daae43e62c1f1f7e"
+content-hash = "e6ced632fb9e7d9f63e5aa1fafa6aac9930be99a441b580988abc5e34983b5a2"

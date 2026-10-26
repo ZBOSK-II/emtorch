@@ -12,6 +12,7 @@ dependencies = [
   "fieldz==0.2.0",
   "prettytable==3.18.0",
   "omegaconf==2.3.1",
+  "argcomplete==3.7.2",
 ]
 authors = [
     {name = "Konrad Grochowski", email = "Konrad.Grochowski@pw.edu.pl"},

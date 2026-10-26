@@ -13,6 +13,7 @@ from pathlib import Path
 from sys import stdout
 from typing import Iterator, TextIO
 
+from argcomplete.completers import FilesCompleter
 from prettytable import PrettyTable
 
 from ..case.instance import CaseId
@@ -34,30 +35,32 @@ class ValuesCommand(Command):
     def __init__(self, parser: argparse.ArgumentParser):
         super().__init__(parser)
 
-        parser.add_argument(
+        self._add_argument(
             "results",
             type=Path,
             help="JSON results file to extract values from",
+            completer=FilesCompleter(["json"]),
         )
-        parser.add_argument(
+        self._add_argument(
             "--output",
             type=Path,
             help="output file (if not provided, STDOUT will be used)",
+            completer=FilesCompleter(),
         )
-        parser.add_argument(
+        self._add_argument(
             "--format",
             help="output format",
             choices=["csv", "text", "latex", "mediawiki", "html", "json"],
             default="csv",
         )
-        parser.add_argument(
+        self._add_argument(
             "--include",
             help="""
 include only specified value (can be provided multiple times, supports regular expressions)""",
             action="append",
             default=[],
         )
-        parser.add_argument(
+        self._add_argument(
             "--exclude",
             help="""
 do not include specified value (can be provided multiple times, supports regular expressions)""",

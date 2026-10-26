@@ -9,19 +9,27 @@
 import argparse
 from typing import Any
 
+from argcomplete.completers import BaseCompleter
+
 from ..config.docgen import fields_descriptions
 from ..subtasks import SubTask, SubTasksLibrary
 from .command import Command
+
+
+class _NamesCompleter(BaseCompleter):
+    def __call__(self, **_: Any) -> list[str]:
+        return sorted(SubTasksLibrary().names())
 
 
 class SubTaskCommand(Command):
     def __init__(self, parser: argparse.ArgumentParser):
         super().__init__(parser)
 
-        parser.add_argument(
+        self._add_argument(
             "name",
             nargs=1,
             help="name of the Sub Task",
+            completer=_NamesCompleter(),
         )
 
     @staticmethod

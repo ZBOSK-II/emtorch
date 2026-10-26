@@ -8,15 +8,25 @@ CLI command module.
 
 import argparse
 from abc import ABC, abstractmethod
+from typing import Any, NoReturn
+
+from argcomplete.completers import BaseCompleter
 
 
 class Command(ABC):
     def __init__(self, parser: argparse.ArgumentParser):
-        self._parser = parser
+        self.__parser = parser
 
-    @property
-    def parser(self) -> argparse.ArgumentParser:
-        return self._parser
+    def _add_argument(
+        self, *args: Any, completer: BaseCompleter | None = None, **kwargs: Any
+    ) -> argparse.Action:
+        action = self.__parser.add_argument(*args, **kwargs)
+        if completer is not None:
+            setattr(action, "completer", completer)
+        return action
+
+    def _error(self, message: str) -> NoReturn:
+        self.__parser.error(message)
 
     @abstractmethod
     def execute(self, args: argparse.Namespace) -> int:

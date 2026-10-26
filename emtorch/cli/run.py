@@ -11,6 +11,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+from argcomplete.completers import FilesCompleter
+
 from .. import execute as emtorch_exec
 from ..arguments import Arguments, RepeatMode
 from ..config.loader import ConfigLoader
@@ -31,51 +33,53 @@ class RunCommand(Command):
     def __init__(self, parser: argparse.ArgumentParser):
         super().__init__(parser)
 
-        parser.add_argument(
+        self._add_argument(
             "data",
             nargs="+",
             help="list of files containing binary data to send to the target",
+            completer=FilesCompleter(),
         )
-        parser.add_argument(
+        self._add_argument(
             "--output-prefix",
             help="prefix to be used for saving output (logs, reports, etc.)",
             default="emtorch",
             type=str,
         )
-        parser.add_argument(
+        self._add_argument(
             "--config",
             help="path to the configuration file",
             default="default-config.toml",
             type=Path,
+            completer=FilesCompleter(["toml"]),
         )
-        parser.add_argument(
+        self._add_argument(
             "--repeats",
             help="number of times to repeat each data file",
             default=1,
             type=int,
         )
-        parser.add_argument(
+        self._add_argument(
             "--repeat-mode",
             help="pattern used when repeating ('aabb' or 'abab')",
             choices=("aabb", "abab"),
             default="aabb",
             type=str,
         )
-        parser.add_argument(
+        self._add_argument(
             "--map",
             action="append",
             type=_parse_kv,
             metavar="KEY=VALUE",
             help="provide mapping for $-string interpolation",
         )
-        parser.add_argument(
+        self._add_argument(
             "--override",
             action="append",
             type=_parse_kv,
             metavar="path.to.key=value",
             help="provide configuration keys override (use [n] or .n. to access n-th element)",
         )
-        parser.add_argument(
+        self._add_argument(
             "--verbose",
             help="output all logs to the console",
             default=False,
@@ -86,16 +90,16 @@ class RunCommand(Command):
         result = [Path(f) for f in data]
         for f in result:
             if not f.is_file():
-                self._parser.error(f"Specified path is not a file: {f}")
+                self._error(f"Specified path is not a file: {f}")
         if len(result) != len(set(result)):
-            self._parser.error(
+            self._error(
                 "Non-unique file names as inputs - results would be inconsistent"
             )
         return result
 
     def __parse_args(self, args: argparse.Namespace) -> Arguments:
         if args.repeats < 1:
-            self._parser.error("--repeats must be >= 1")
+            self._error("--repeats must be >= 1")
 
         date_suffix = f"-{datetime.now():%Y%m%d-%H%M%S}"
 
