@@ -107,7 +107,7 @@ class RunCommand(Command):
             data=self.__parse_data(args.data),
             output_prefix=args.output_prefix + date_suffix,
             config=args.config,
-            config_overrides=args.override,
+            config_overrides=args.override or [],
             repeat_mode=RepeatMode(args.repeat_mode),
             repeats=args.repeats,
             mapping=dict(args.map or []),

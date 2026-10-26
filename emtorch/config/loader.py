@@ -42,7 +42,7 @@ class ConfigLoader:
 
     @staticmethod
     def apply_overrides(
-        config: Any, overrides: list[tuple[str, str]] | None
+        config: Any, overrides: list[tuple[str, str]]
     ) -> dict[str, Any]:
         if not overrides:
             return cast(dict[str, Any], config)
