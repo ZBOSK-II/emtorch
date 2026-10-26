@@ -117,6 +117,17 @@ output results in JSON format.
 For a comprehensive configuration example, see `default-config.toml`
 in the repository. 
 
+More examples of command line usage, together with their exact
+output, can be found in the
+[CLI tests](https://github.com/ZBOSK-II/emtorch/tree/master/tests/cli)
+(e.g. [`run.t`](https://github.com/ZBOSK-II/emtorch/blob/master/tests/cli/run.t)
+or [`values.t`](https://github.com/ZBOSK-II/emtorch/blob/master/tests/cli/values.t),
+using [`experiment.toml`](https://github.com/ZBOSK-II/emtorch/blob/master/tests/cli/experiment.toml)
+configuration). These are [prysk](https://github.com/prysk/prysk) test files:
+lines starting with `$` are commands, and the indented lines following them
+are the expected output. As they are verified on every change, they always
+reflect the current behaviour.
+
 Experiment Lifecycle
 ------------------------------------------------------------
 Each data file passed to emtorch represents a single Test Case.

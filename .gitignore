@@ -7,4 +7,5 @@ __pycache__
 *.json
 *.log
 *.pyc
+*.t.err
 /dist
