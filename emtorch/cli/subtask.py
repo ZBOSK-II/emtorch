@@ -10,16 +10,19 @@ from typing import TYPE_CHECKING, Any
 
 from argcomplete.completers import BaseCompleter
 
-from ..config.docgen import fields_descriptions
-from ..subtasks import SubTask, SubTasksLibrary
 from .command import Command
 
 if TYPE_CHECKING:
     import argparse
 
+    from ..subtasks import SubTask
+
 
 class _NamesCompleter(BaseCompleter):
     def __call__(self, **_: Any) -> list[str]:
+        # pylint: disable=import-outside-toplevel
+        from ..subtasks import SubTasksLibrary
+
         return sorted(SubTasksLibrary().names())
 
 
@@ -50,6 +53,9 @@ class SubTaskCommand(Command):
 
     @classmethod
     def _print_config(cls, config: Any) -> None:
+        # pylint: disable=import-outside-toplevel
+        from ..config.docgen import fields_descriptions
+
         print()
         print("Arguments")
         print("---------")
@@ -58,6 +64,9 @@ class SubTaskCommand(Command):
             print(f"  {field_desc.name:24} - ({field_desc.typename}) {desc}")
 
     def execute(self, args: argparse.Namespace) -> int:
+        # pylint: disable=import-outside-toplevel
+        from ..subtasks import SubTasksLibrary
+
         name = args.name[0]
         library = SubTasksLibrary()
         subtask, configclass = library.get(name)

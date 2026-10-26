@@ -8,7 +8,6 @@
 
 from typing import TYPE_CHECKING
 
-from ..subtasks import SubTasksLibrary
 from .command import Command
 
 if TYPE_CHECKING:
@@ -17,6 +16,9 @@ if TYPE_CHECKING:
 
 class SubTasksCommand(Command):
     def execute(self, args: argparse.Namespace) -> int:
+        # pylint: disable=import-outside-toplevel
+        from ..subtasks import SubTasksLibrary
+
         library = SubTasksLibrary()
         print("Known Sub Tasks:\n")
         for name in sorted(library.names()):

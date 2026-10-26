@@ -14,9 +14,6 @@ from pathlib import Path
 from argcomplete.completers import FilesCompleter
 
 from ..arguments import Arguments, RepeatMode
-from ..config.loader import ConfigLoader
-from ..experiment import execute
-from ..results.file import write_results
 from ..version import VERSION
 from .command import Command
 
@@ -143,6 +140,11 @@ class RunCommand(Command):
         root_logger.info(f"Started instance ({VERSION})")
 
     def execute(self, args: argparse.Namespace) -> int:
+        # pylint: disable=import-outside-toplevel
+        from ..config.loader import ConfigLoader
+        from ..experiment import execute
+        from ..results.file import write_results
+
         run_args = self.__parse_args(args)
         self.__setup_logger(run_args.output(".log"), run_args.verbose)
 

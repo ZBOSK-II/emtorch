@@ -13,9 +13,7 @@ from sys import stdout
 from typing import TYPE_CHECKING, Iterator, TextIO
 
 from argcomplete.completers import FilesCompleter
-from prettytable import PrettyTable
 
-from ..results.file import load_results
 from .command import Command
 
 if TYPE_CHECKING:
@@ -99,6 +97,11 @@ do not include specified value (can be provided multiple times, supports regular
         return values
 
     def execute(self, args: argparse.Namespace) -> int:
+        # pylint: disable=import-outside-toplevel
+        from prettytable import PrettyTable
+
+        from ..results.file import load_results
+
         results = load_results(args.results)
         table = PrettyTable()
         values = self._filter_values(args, results)
