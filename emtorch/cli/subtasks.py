@@ -22,7 +22,7 @@ class SubTasksCommand(Command):
         library = SubTasksLibrary()
         print("Known Sub Tasks:\n")
         for name in sorted(library.names()):
-            print("\t", name)
+            print(f"\t{name}")
         print(
             "\nType 'emtorch subtask <TASK-NAME>' to get help on the given task's arguments"
         )

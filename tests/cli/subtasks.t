@@ -3,19 +3,19 @@ Listing available subtasks.
   $ emtorch subtasks
   Known Sub Tasks:
   
-  \t coap-monitor (esc)
-  \t coap-send (esc)
-  \t echo (esc)
-  \t exec (esc)
-  \t file-write (esc)
-  \t logger-float-matcher (esc)
-  \t logger-int-matcher (esc)
-  \t ping-alive (esc)
-  \t ping-stable (esc)
-  \t remote (esc)
-  \t sftp-get (esc)
-  \t sftp-put (esc)
-  \t shell (esc)
+  \tcoap-monitor (esc)
+  \tcoap-send (esc)
+  \techo (esc)
+  \texec (esc)
+  \tfile-write (esc)
+  \tlogger-float-matcher (esc)
+  \tlogger-int-matcher (esc)
+  \tping-alive (esc)
+  \tping-stable (esc)
+  \tremote (esc)
+  \tsftp-get (esc)
+  \tsftp-put (esc)
+  \tshell (esc)
   
   Type 'emtorch subtask <TASK-NAME>' to get help on the given task's arguments
 
