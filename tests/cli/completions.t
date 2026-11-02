@@ -71,11 +71,25 @@ Completing command line (argcomplete protocol, as used by the installed scripts)
   $ complete 'emtorch run --repeat-mode '
   aabb abab
 
-  $ complete 'emtorch run --config '
-  custom/ .config/ .local/ config.toml
+  $ complete 'emtorch run --config ' | tr ' ' '\n' | LC_ALL=C sort
+  
+  .config/
+  .local/
+  config.toml
+  custom/
 
   $ complete 'emtorch values --format '
   csv text latex mediawiki html json
 
-  $ complete 'emtorch values '
-  -h --help --output --format --include --exclude custom/ .config/ .local/ results.json
+  $ complete 'emtorch values ' | tr ' ' '\n' | LC_ALL=C sort
+  
+  --exclude
+  --format
+  --help
+  --include
+  --output
+  -h
+  .config/
+  .local/
+  custom/
+  results.json
