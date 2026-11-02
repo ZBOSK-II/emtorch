@@ -72,7 +72,6 @@ Completing command line (argcomplete protocol, as used by the installed scripts)
   aabb abab
 
   $ complete 'emtorch run --config ' | tr ' ' '\n' | LC_ALL=C sort
-  
   .config/
   .local/
   config.toml
@@ -82,7 +81,6 @@ Completing command line (argcomplete protocol, as used by the installed scripts)
   csv text latex mediawiki html json
 
   $ complete 'emtorch values ' | tr ' ' '\n' | LC_ALL=C sort
-  
   --exclude
   --format
   --help
