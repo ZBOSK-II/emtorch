@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies updated
+ - pytest bump from 9.1.1 to 9.2.0 [\#103](https://github.com/ZBOSK-II/emtorch/pull/103) ([dependabot](https://github.com/dependabot))
+ - flake8 from 7.4.1 to 7.5.0 [\#101](https://github.com/ZBOSK-II/emtorch/pull/101) ([dependabot](https://github.com/dependabot))
+ - mypy from 2.4.0 to 2.4.1 [\#102](https://github.com/ZBOSK-II/emtorch/pull/102) ([dependabot](https://github.com/dependabot))
+
 
 ## [3.4.0] - 2026-10-26
 
