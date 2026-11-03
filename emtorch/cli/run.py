@@ -74,7 +74,7 @@ class RunCommand(Command):
             action="append",
             type=_parse_kv,
             metavar="path.to.key=value",
-            help="provide configuration keys override (use [n] or .n. to access n-th element)",
+            help="provide configuration keys override (e.g. setups.NAME.KEY=VALUE)",
         )
         self._add_argument(
             "--verbose",

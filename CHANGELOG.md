@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+ - **breaking**: sub-tasks are defined as named tables `[setups.NAME]` with `type` and arguments
+   in a single table, instead of `[[setups]]` with `name` and a separate `[setups.args]` table
+
 ### Dependencies updated
  - pytest bump from 9.1.1 to 9.2.0 [\#103](https://github.com/ZBOSK-II/emtorch/pull/103) ([dependabot](https://github.com/dependabot))
  - flake8 from 7.4.1 to 7.5.0 [\#101](https://github.com/ZBOSK-II/emtorch/pull/101) ([dependabot](https://github.com/dependabot))

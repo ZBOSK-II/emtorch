@@ -4,72 +4,48 @@ EXAMPLE_VAR = "example value"
 [delays]
 between_cases = 0.2
 
-[[setups]]
+[setups.setup]
 type = "exec"
-name = "setup"
-
-[setups.args]
 program = "echo"
 args = ["SETUP $EMTORCH_CASE_ID ($EXAMPLE_VAR)"]
 
-[[setups]]
+[setups.ping]
 type = "ping-alive"
-name = "ping"
-
-[setups.args]
 host = "127.0.0.1"
 timeout = 10
 interval = 1
 
-[[monitoring]]
+[monitoring.loop]
 type = "shell"
-name = "loop"
-
-[monitoring.args]
 cmd = "while true; do echo looping; sleep 1; done"
 timeout = 5
 signal = "SIGKILL"
 
-[[monitoring]]
+[monitoring.logger]
 type = "logger-int-matcher"
-name = "logger"
-
-[monitoring.args]
 value = "logger"
 pattern = "count\\s+=\\s+(?P<value>\\d+)"
 subtask = "actions.test"
 
-[[actions]]
+[actions.test]
 type = "shell"
-name = "test"
+cmd = "cat $EMTORCH_DATA_PATH"
 
-[actions.delays]
+[actions.test.delays]
 before = 0.5
 after = 0.1
 
-[actions.args]
-cmd = "cat $EMTORCH_DATA_PATH"
-
-[[actions]]
+[actions.sleep]
 type = "shell"
-name = "sleep"
-
-[actions.args]
 cmd = "sleep 2"
 timeout = 3
 
-[[checks]]
+[checks.ping]
 type = "ping-stable"
-name = "ping"
-
-[checks.args]
 host = "127.0.0.1"
 count = 2
 interval = 1
 
-[[checks]]
+[checks.teardown]
 type = "shell"
-name = "teardown"
-
-[checks.args]
 cmd = "echo TEARDOWN"

@@ -85,7 +85,7 @@ Subtask output is stored in the log only.
 
 Mapping and configuration override - exit code is the number of failed subtasks.
 
-  $ emtorch run --config "$TESTDIR/experiment.toml" --output-prefix override --map GREETING=hi --override 'actions[0].args.cmd=exit 3' a.bin > /dev/null 2>&1
+  $ emtorch run --config "$TESTDIR/experiment.toml" --output-prefix override --map GREETING=hi --override 'actions.process.cmd=exit 3' a.bin > /dev/null 2>&1
   [3]
 
   $ grep -h STDOUT override-*.log | strip_ts

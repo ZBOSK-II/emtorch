@@ -117,10 +117,10 @@ class Case:
     class Config:
         delays: CaseDelays.Config = field(default_factory=CaseDelays.Config)
         mappings: dict[str, str] = field(default_factory=dict)
-        setups: SubTasks.Config = field(default_factory=list)
-        monitoring: SubTasks.Config = field(default_factory=list)
-        actions: SubTasks.Config = field(default_factory=list)
-        checks: SubTasks.Config = field(default_factory=list)
+        setups: SubTasks.Config = field(default_factory=dict)
+        monitoring: SubTasks.Config = field(default_factory=dict)
+        actions: SubTasks.Config = field(default_factory=dict)
+        checks: SubTasks.Config = field(default_factory=dict)
 
     def __init__(
         self,

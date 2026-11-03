@@ -7,8 +7,10 @@ Module holding experiment building blocks - sub tasks.
 """
 
 import asyncio
+import dataclasses
 import inspect
 import logging
+import re
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
 from dataclasses import field
@@ -188,11 +190,20 @@ class SubTaskInstance:
     # pylint: disable=invalid-field-call
     @configclass
     class Config:
-        name: str
         type: str
         delays: SubTaskDelays.Config = field(default_factory=SubTaskDelays.Config)
         when: RunMode = RunMode.ALWAYS
-        args: dict[str, Any]
+
+    # keys of a sub-task table handled by the instance, not by the sub-task itself
+    RESERVED_KEYS = frozenset(f.name for f in dataclasses.fields(Config))
+
+    @classmethod
+    def separate_args(
+        cls, table: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        instance = {k: v for k, v in table.items() if k in cls.RESERVED_KEYS}
+        args = {k: v for k, v in table.items() if k not in cls.RESERVED_KEYS}
+        return instance, args
 
     def __init__(
         self,
@@ -276,7 +287,8 @@ class SubTaskContext:
 
 
 class SubTasks:
-    type Config = list[SubTaskInstance.Config]
+    # sub-task name -> raw sub-task table, in definition order
+    type Config = dict[str, dict[str, Any]]
 
     def __init__(self, name: str, subtasks: list[SubTaskInstance]):
         self._subtasks = subtasks
@@ -324,7 +336,15 @@ class SubTasksLibrary:
             raise KeyError(f"Unknown subtask type '{name}'")
 
         cls = entry.load()
+        self._check_subtask_class(name, cls)
+        config = cls.Config
+        self._check_config_class(name, config)
 
+        self._cache[name] = (cls, config)
+        return cast(type[SubTask], cls), config
+
+    @staticmethod
+    def _check_subtask_class(name: str, cls: Any) -> None:
         if (
             not issubclass(cls, SubTask)
             or not hasattr(cls, "Config")
@@ -334,9 +354,18 @@ class SubTasksLibrary:
                 f"Type registered as '{name}' is not a proper Emtorch subtask"
             )
 
-        config = cls.Config
-        self._cache[name] = (cls, config)
-        return cast(type[SubTask], cls), config
+    @staticmethod
+    def _check_config_class(name: str, config: ConfigClass) -> None:
+        if not dataclasses.is_dataclass(config):
+            return
+        reserved = SubTaskInstance.RESERVED_KEYS.intersection(
+            f.name for f in dataclasses.fields(config)
+        )
+        if reserved:
+            raise RuntimeError(
+                f"Type registered as '{name}' uses reserved config keys: "
+                + ", ".join(sorted(reserved))
+            )
 
 
 class SubTaskFactoryCache:
@@ -366,19 +395,30 @@ class SubTaskFactoryCache:
 
 
 class SubTasksBuilder:
+    # TOML bare key characters - names usable in results and '--override' paths
+    NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]+")
+
     def __init__(self, config_loader: ConfigLoader, results: ResultsCollector):
+        self._config_loader = config_loader
         self._factories = SubTaskFactoryCache(config_loader)
         self._results = results
 
     def build_subtask(
-        self, prefix: str, config: SubTaskInstance.Config
+        self, prefix: str, name: str, table: dict[str, Any]
     ) -> SubTaskInstance:
-        name = prefix + "." + config.name
+        if not self.NAME_PATTERN.fullmatch(name):
+            raise ValueError(
+                f"Sub-task name '{prefix}.{name}' must consist only of "
+                "letters, digits, '_' and '-'"
+            )
+        instance, args = SubTaskInstance.separate_args(table)
+        config = self._config_loader.from_dict(SubTaskInstance.Config, instance)
+        fullname = prefix + "." + name
         factory = self._factories.get(config.type)
-        subtask = factory(config.args)
-        subresults = self._results.add_subtask(name, subtask.result_type)
-        return SubTaskInstance(name, config, subtask, subresults)
+        subtask = factory(args)
+        subresults = self._results.add_subtask(fullname, subtask.result_type)
+        return SubTaskInstance(fullname, config, subtask, subresults)
 
     def build(self, name: str, config: SubTasks.Config) -> SubTasks:
-        subtasks = [self.build_subtask(name, c) for c in config]
+        subtasks = [self.build_subtask(name, n, table) for n, table in config.items()]
         return SubTasks(name, subtasks)

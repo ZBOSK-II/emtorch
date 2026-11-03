@@ -84,7 +84,7 @@ Additional options include:
 - `--repeats N` - repeat each test case N times
 - `--repeat-mode {aabb,abab}` - control repetition order
 - `--map KEY=VALUE` - introduces template variable (see below)
-- `--override KEY=VALUE` - overrides configuration setting from TOML
+- `--override KEY=VALUE` - overrides configuration setting from TOML (e.g. `actions.NAME.cmd=...`)
 
 Quick Start
 ------------------------------------------------------------
@@ -98,11 +98,8 @@ Create a minimal configuration file (`config.toml`):
 [delays]
 between_cases = 0.2
 
-[[actions]]
+[actions.read_data]
 type = "shell"
-name = "read_data"
-
-[actions.args]
 cmd = "cat $EMTORCH_DATA_PATH"
 ```
 
@@ -161,41 +158,36 @@ Example configuration structure:
 [delays]
 between_cases = 0.2
 
-[[setups]]
+[setups.check_host]
 type = "ping-alive"
-name = "check_host"
-
-[setups.args]
 host = "192.168.1.100"
 timeout = 10
 interval = 1
 
-[[actions]]
+[actions.run_test]
 type = "shell"
-name = "run_test"
+cmd = "cat $EMTORCH_DATA_PATH"
 
-[actions.delays]
+[actions.run_test.delays]
 before = 0.5
 after = 0.1
 
-[actions.args]
-cmd = "cat $EMTORCH_DATA_PATH"
-
-[[checks]]
+[checks.verify_host]
 type = "ping-stable"
-name = "verify_host"
-
-[checks.args]
 host = "192.168.1.100"
 count = 3
 interval = 1
 ```
 
-Each element of a sequence has:
- * `name` - should be unique in a given sequence, used for results identification
+Each element of a sequence is a `[SEQUENCE.NAME]` table, where `NAME`
+is used for results identification (and must consist only of letters,
+digits, `_` and `-`).
+Sub-tasks are executed in the order of their definition in the file.
+The table holds:
  * `type` - type of the sub-task (see SubTasks below)
  * `delays` - (optional) delays before and after execution of the sub-task
  * `when` - (optional) `always|never|once|per-data`, controls when the sub-task is executed
+ * all the remaining keys are arguments of the given sub-task type
 
 Template Variables
 ------------------------------------------------------------
@@ -221,11 +213,8 @@ file overridden) using `--map KEY=VALUE` argument, e.g.
 
 Example usage:
 ``` toml
-[[actions]]
+[actions.process]
 type = "shell"
-name = "process"
-
-[actions.args]
 cmd = "process_data --input $EMTORCH_DATA_PATH --id $EMTORCH_CASE_ID"
 ```
 
