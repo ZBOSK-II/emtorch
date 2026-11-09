@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - `config-check` command validating configuration without executing the experiment
+ - `config-schema` command generating JSON Schema of the configuration, for editors
 
 ### Changed
  - **breaking**: sub-tasks are defined as named tables `[setups.NAME]` with `type` and arguments

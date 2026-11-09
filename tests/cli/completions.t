@@ -60,7 +60,7 @@ Completing command line (argcomplete protocol, as used by the installed scripts)
   $ touch config.toml data.bin results.json
 
   $ complete 'emtorch '
-  -h --help --version run config-check subtasks subtask values shell-completions
+  -h --help --version run config-check config-schema subtasks subtask values shell-completions
 
   $ complete 'emtorch sh'
   shell-completions

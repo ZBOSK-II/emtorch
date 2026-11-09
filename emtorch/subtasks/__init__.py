@@ -18,6 +18,7 @@ from enum import StrEnum, auto
 from importlib.metadata import entry_points
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     AsyncIterator,
     Callable,
@@ -27,12 +28,15 @@ from typing import (
     cast,
 )
 
-from ..config import configclass
+from ..config import Doc, configclass
 from ..delay import Delay
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from pydantic import GetJsonSchemaHandler
+    from pydantic_core import CoreSchema
+
     from ..case import CaseInstance
     from ..config.loader import ConfigLoader
     from ..context import (
@@ -97,8 +101,12 @@ class BasicSubTask(TypedSubTask[BasicResult]):
 class SubTaskDelays:
     @configclass
     class Config:
-        before: float | None = None
-        after: float | None = None
+        before: Annotated[
+            float | None, Doc("delay before the sub-task, in seconds")
+        ] = None
+        after: Annotated[float | None, Doc("delay after the sub-task, in seconds")] = (
+            None
+        )
 
     def __init__(self, before: Delay, after: Delay):
         self._before = before
@@ -132,6 +140,16 @@ class RunMode(StrEnum):
                 if member.value == normalized:
                     return member
         return None
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> dict[str, Any]:
+        schema = handler(core_schema)
+        schema["enum"] = [m.value for m in cls] + [
+            m.value.replace("_", "-") for m in cls if "_" in m.value
+        ]
+        return schema
 
 
 class RunPolicy(ABC):
@@ -197,9 +215,13 @@ class SubTaskInstance:
     # pylint: disable=invalid-field-call
     @configclass
     class Config:
-        type: str
-        delays: SubTaskDelays.Config = field(default_factory=SubTaskDelays.Config)
-        when: RunMode = RunMode.ALWAYS
+        type: Annotated[str, Doc("type of the sub-task, see 'emtorch subtasks'")]
+        delays: Annotated[
+            SubTaskDelays.Config, Doc("delays around the sub-task execution")
+        ] = field(default_factory=SubTaskDelays.Config)
+        when: Annotated[
+            RunMode, Doc("when the sub-task is executed, considering all test cases")
+        ] = RunMode.ALWAYS
 
     # TOML bare key characters - names usable in results and '--override' paths
     NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]+")

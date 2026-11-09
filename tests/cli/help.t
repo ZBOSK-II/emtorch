@@ -9,6 +9,7 @@ Top level help and version.
     COMMAND              emtorch command to be executed (listed below)
       run                execute the experiment using configuration
       config-check       validates the configuration without executing it
+      config-schema      generates JSON Schema of the configuration, for editors
       subtasks           lists all available subtasks
       subtask            provides documentation for the given task
       values             extracts values from results
@@ -32,5 +33,5 @@ Missing or mistyped command.
 
   $ emtorch rnu
   usage: emtorch [-h] [--version] COMMAND ...
-  emtorch: error: argument COMMAND: invalid choice: 'rnu', maybe you meant 'run'? (choose from 'run', 'config-check', 'subtasks', 'subtask', 'values', 'shell-completions')
+  emtorch: error: argument COMMAND: invalid choice: 'rnu', maybe you meant 'run'? (choose from 'run', 'config-check', 'config-schema', 'subtasks', 'subtask', 'values', 'shell-completions')
   [2]

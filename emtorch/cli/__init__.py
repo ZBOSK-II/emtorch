@@ -16,6 +16,7 @@ from ..version import VERSION
 from .command import Command
 from .completions import ShellCompletionsCommand
 from .config_check import ConfigCheckCommand
+from .config_schema import ConfigSchemaCommand
 from .run import RunCommand
 from .subtask import SubTaskCommand
 from .subtasks import SubTasksCommand
@@ -50,6 +51,11 @@ class Cli:
             ConfigCheckCommand,
             "config-check",
             "validates the configuration without executing it",
+        )
+        self.__add_command(
+            ConfigSchemaCommand,
+            "config-schema",
+            "generates JSON Schema of the configuration, for editors",
         )
         self.__add_command(SubTasksCommand, "subtasks", "lists all available subtasks")
         self.__add_command(

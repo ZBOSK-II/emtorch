@@ -8,10 +8,10 @@ Module representing "case" - a single instance of the experiment execution.
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Self, get_type_hints
+from typing import TYPE_CHECKING, Annotated, Self, get_type_hints
 
 from .arguments import Arguments, RepeatMode
-from .config import configclass
+from .config import Doc, configclass
 from .delay import Delay
 from .subtasks import SubTasks, SubTasksBuilder
 
@@ -96,7 +96,9 @@ class CaseInstance:
 class CaseDelays:
     @configclass
     class Config:
-        between_cases: float | None = None
+        between_cases: Annotated[
+            float | None, Doc("delay between test cases, in seconds")
+        ] = None
 
     def __init__(self, between_cases: Delay):
         self._between_cases = between_cases
@@ -115,12 +117,24 @@ class Case:
     # pylint: disable=invalid-field-call
     @configclass
     class Config:
-        delays: CaseDelays.Config = field(default_factory=CaseDelays.Config)
-        mappings: dict[str, str] = field(default_factory=dict)
-        setups: SubTasks.Config = field(default_factory=dict)
-        monitoring: SubTasks.Config = field(default_factory=dict)
-        actions: SubTasks.Config = field(default_factory=dict)
-        checks: SubTasks.Config = field(default_factory=dict)
+        delays: Annotated[CaseDelays.Config, Doc("delays of the experiment")] = field(
+            default_factory=CaseDelays.Config
+        )
+        mappings: Annotated[
+            dict[str, str], Doc("values available in $-strings, as $NAME")
+        ] = field(default_factory=dict)
+        setups: Annotated[
+            SubTasks.Config, Doc("sub-tasks executed sequentially, before the case")
+        ] = field(default_factory=dict)
+        monitoring: Annotated[
+            SubTasks.Config, Doc("sub-tasks executed concurrently, during actions")
+        ] = field(default_factory=dict)
+        actions: Annotated[
+            SubTasks.Config, Doc("sub-tasks executed sequentially, as the case")
+        ] = field(default_factory=dict)
+        checks: Annotated[
+            SubTasks.Config, Doc("sub-tasks executed sequentially, after the case")
+        ] = field(default_factory=dict)
 
         @classmethod
         def subtasks_keys(cls) -> tuple[str, ...]:

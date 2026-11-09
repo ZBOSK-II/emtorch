@@ -9,7 +9,7 @@ Module representing signal configuration.
 import signal
 from typing import Annotated, Any
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, WithJsonSchema
 
 
 def parse_signal(value: Any) -> signal.Signals:
@@ -32,4 +32,12 @@ def parse_signal(value: Any) -> signal.Signals:
 Signal = Annotated[
     signal.Signals,
     BeforeValidator(parse_signal),
+    WithJsonSchema(
+        {
+            "anyOf": [
+                {"type": "string", "enum": list(signal.Signals.__members__)},
+                {"type": "integer", "enum": sorted({s.value for s in signal.Signals})},
+            ]
+        }
+    ),
 ]
