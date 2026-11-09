@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+ - `config-check` command validating configuration without executing the experiment
+
 ### Changed
  - **breaking**: sub-tasks are defined as named tables `[setups.NAME]` with `type` and arguments
    in a single table, instead of `[[setups]]` with `name` and a separate `[setups.args]` table

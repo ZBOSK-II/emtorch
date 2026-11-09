@@ -186,6 +186,13 @@ class PerDataRunPolicy(RunPolicy):
         return True
 
 
+class SubTaskNameError(ValueError):
+    def __init__(self, location: str, reason: str):
+        super().__init__(f"Sub-task name '{location}' {reason}")
+        self.location = location
+        self.reason = reason
+
+
 class SubTaskInstance:
     # pylint: disable=invalid-field-call
     @configclass
@@ -193,6 +200,9 @@ class SubTaskInstance:
         type: str
         delays: SubTaskDelays.Config = field(default_factory=SubTaskDelays.Config)
         when: RunMode = RunMode.ALWAYS
+
+    # TOML bare key characters - names usable in results and '--override' paths
+    NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]+")
 
     # keys of a sub-task table handled by the instance, not by the sub-task itself
     RESERVED_KEYS = frozenset(f.name for f in dataclasses.fields(Config))
@@ -204,6 +214,24 @@ class SubTaskInstance:
         instance = {k: v for k, v in table.items() if k in cls.RESERVED_KEYS}
         args = {k: v for k, v in table.items() if k not in cls.RESERVED_KEYS}
         return instance, args
+
+    @classmethod
+    def check_name(cls, prefix: str, name: str) -> str:
+        fullname = prefix + "." + name
+        if not cls.NAME_PATTERN.fullmatch(name):
+            raise SubTaskNameError(
+                fullname, "must consist only of letters, digits, '_' and '-'"
+            )
+        return fullname
+
+    @classmethod
+    def parse_config(
+        cls, config_loader: ConfigLoader, prefix: str, name: str, table: dict[str, Any]
+    ) -> tuple[str, Config, dict[str, Any]]:
+        fullname = cls.check_name(prefix, name)
+        instance, args = cls.separate_args(table)
+        config = config_loader.from_dict(cls.Config, instance)
+        return fullname, config, args
 
     def __init__(
         self,
@@ -395,9 +423,6 @@ class SubTaskFactoryCache:
 
 
 class SubTasksBuilder:
-    # TOML bare key characters - names usable in results and '--override' paths
-    NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]+")
-
     def __init__(self, config_loader: ConfigLoader, results: ResultsCollector):
         self._config_loader = config_loader
         self._factories = SubTaskFactoryCache(config_loader)
@@ -406,16 +431,10 @@ class SubTasksBuilder:
     def build_subtask(
         self, prefix: str, name: str, table: dict[str, Any]
     ) -> SubTaskInstance:
-        if not self.NAME_PATTERN.fullmatch(name):
-            raise ValueError(
-                f"Sub-task name '{prefix}.{name}' must consist only of "
-                "letters, digits, '_' and '-'"
-            )
-        instance, args = SubTaskInstance.separate_args(table)
-        config = self._config_loader.from_dict(SubTaskInstance.Config, instance)
-        fullname = prefix + "." + name
-        factory = self._factories.get(config.type)
-        subtask = factory(args)
+        fullname, config, args = SubTaskInstance.parse_config(
+            self._config_loader, prefix, name, table
+        )
+        subtask = self._factories.get(config.type)(args)
         subresults = self._results.add_subtask(fullname, subtask.result_type)
         return SubTaskInstance(fullname, config, subtask, subresults)
 

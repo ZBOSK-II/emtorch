@@ -8,7 +8,7 @@ Module representing "case" - a single instance of the experiment execution.
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, get_type_hints
 
 from .arguments import Arguments, RepeatMode
 from .config import configclass
@@ -121,6 +121,11 @@ class Case:
         monitoring: SubTasks.Config = field(default_factory=dict)
         actions: SubTasks.Config = field(default_factory=dict)
         checks: SubTasks.Config = field(default_factory=dict)
+
+        @classmethod
+        def subtasks_keys(cls) -> tuple[str, ...]:
+            hints = get_type_hints(cls)
+            return tuple(name for name, t in hints.items() if t is SubTasks.Config)
 
     def __init__(
         self,

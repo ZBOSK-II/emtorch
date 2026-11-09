@@ -6,13 +6,23 @@
 CLI command module.
 """
 
+import argparse
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn
 
-if TYPE_CHECKING:
-    import argparse
+from argcomplete.completers import FilesCompleter
 
+if TYPE_CHECKING:
     from argcomplete.completers import BaseCompleter
+
+
+def parse_kv(s: str) -> tuple[str, str]:
+    try:
+        key, value = s.split("=", 1)
+        return key, value
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Expected format KEY=VALUE") from exc
 
 
 class Command(ABC):
@@ -26,6 +36,24 @@ class Command(ABC):
         if completer is not None:
             setattr(action, "completer", completer)
         return action
+
+    def _add_config_argument(self) -> None:
+        self._add_argument(
+            "--config",
+            help="path to the configuration file",
+            default="default-config.toml",
+            type=Path,
+            completer=FilesCompleter(["toml"]),
+        )
+
+    def _add_override_argument(self) -> None:
+        self._add_argument(
+            "--override",
+            action="append",
+            type=parse_kv,
+            metavar="path.to.key=value",
+            help="provide configuration keys override (e.g. setups.NAME.KEY=VALUE)",
+        )
 
     def _error(self, message: str) -> NoReturn:
         self.__parser.error(message)

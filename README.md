@@ -86,6 +86,21 @@ Additional options include:
 - `--map KEY=VALUE` - introduces template variable (see below)
 - `--override KEY=VALUE` - overrides configuration setting from TOML (e.g. `actions.NAME.cmd=...`)
 
+To validate a configuration without executing the experiment, use
+the `config-check` subcommand:
+
+``` shell
+emtorch config-check --config=experiment.toml
+```
+
+It reports all found problems (unknown keys, unknown sub-task types,
+invalid or missing sub-task arguments, etc.) and exits with a non-zero
+status when the configuration is invalid. The `--override` option is
+supported as well, so the configuration of a planned `run`, including
+its overrides, can be checked. Mappings (`[mappings]` and `--map`) are
+used only when `$`-strings are evaluated during the experiment, so
+they do not affect the validation.
+
 Quick Start
 ------------------------------------------------------------
 Create a simple test data file:

@@ -52,7 +52,9 @@ class ConfigLoader:
         return cast(dict[str, Any], OmegaConf.to_container(base))
 
     def from_dict[T](self, config_type: type[T], data: dict[str, Any]) -> T:
-        assert dataclasses.is_dataclass(config_type)
+        assert dataclasses.is_dataclass(
+            config_type
+        ), f"Configuration type {config_type!r} is not a dataclass"
         adapter = self._cache.get_adapter(config_type)
         return adapter.validate_python(data, extra="forbid")
 

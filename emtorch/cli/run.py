@@ -15,15 +15,7 @@ from argcomplete.completers import FilesCompleter
 
 from ..arguments import Arguments, RepeatMode
 from ..version import VERSION
-from .command import Command
-
-
-def _parse_kv(s: str) -> tuple[str, str]:
-    try:
-        key, value = s.split("=", 1)
-        return key, value
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError("Expected format KEY=VALUE") from exc
+from .command import Command, parse_kv
 
 
 class RunCommand(Command):
@@ -42,13 +34,7 @@ class RunCommand(Command):
             default="emtorch",
             type=str,
         )
-        self._add_argument(
-            "--config",
-            help="path to the configuration file",
-            default="default-config.toml",
-            type=Path,
-            completer=FilesCompleter(["toml"]),
-        )
+        self._add_config_argument()
         self._add_argument(
             "--repeats",
             help="number of times to repeat each data file",
@@ -65,17 +51,11 @@ class RunCommand(Command):
         self._add_argument(
             "--map",
             action="append",
-            type=_parse_kv,
+            type=parse_kv,
             metavar="KEY=VALUE",
             help="provide mapping for $-string interpolation",
         )
-        self._add_argument(
-            "--override",
-            action="append",
-            type=_parse_kv,
-            metavar="path.to.key=value",
-            help="provide configuration keys override (e.g. setups.NAME.KEY=VALUE)",
-        )
+        self._add_override_argument()
         self._add_argument(
             "--verbose",
             help="output all logs to the console",
