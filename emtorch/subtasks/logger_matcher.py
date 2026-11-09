@@ -23,8 +23,8 @@ class LoggerMatcher[T: ValuePoint](BasicSubTask):
         pattern: Annotated[
             str,
             Doc(
-                "regular expression containing named group `value` used to extract the value \
-                (e.g. `prefix=(?P<value>\\d+.\\d+)`)"
+                "regular expression containing named group `value` used to extract"
+                " the value (e.g. `prefix=(?P<value>\\d+\\.\\d+)`)"
             ),
         ]
         subtask: Annotated[str, Doc("subtask which logs should be scanned")]

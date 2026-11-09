@@ -224,6 +224,11 @@ The schema describes the sub-tasks installed at the moment of its
 generation - generate it again after installing sub-task plugins
 or upgrading emtorch.
 
+The schema expects values of their proper TOML types (e.g. numbers
+for timeouts and delays). Emtorch itself is more lenient and converts
+some values (e.g. a string `"1.5"` to a number), so a configuration
+flagged by the editor may still be accepted by `run` and `config-check`.
+
 Template Variables
 ------------------------------------------------------------
 Configuration values support **$-string interpolation** using

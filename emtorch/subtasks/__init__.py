@@ -336,9 +336,24 @@ class SubTaskContext:
         await self.parent.wait_for_actions_ended()
 
 
+class _SubTasksJsonSchema:
+    def __get_pydantic_json_schema__(
+        self, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> dict[str, Any]:
+        # pylint: disable=import-outside-toplevel
+        from pydantic import TypeAdapter
+
+        tables = TypeAdapter(dict[str, SubTaskInstance.Config]).core_schema
+        schema = handler(tables)
+        schema["propertyNames"] = {
+            "pattern": f"^{SubTaskInstance.NAME_PATTERN.pattern}$"
+        }
+        return schema
+
+
 class SubTasks:
     # sub-task name -> raw sub-task table, in definition order
-    type Config = dict[str, dict[str, Any]]
+    type Config = Annotated[dict[str, dict[str, Any]], _SubTasksJsonSchema()]
 
     def __init__(self, name: str, subtasks: list[SubTaskInstance]):
         self._subtasks = subtasks
