@@ -43,6 +43,7 @@ class _FakeCaseContext:
     def __init__(self) -> None:
         self._actions_ended = asyncio.Event()
         self.mapping: dict[str, str] = {}  # read by Template.evaluate
+        self.case_aborted = False
 
     async def wait_for_actions_ended(self) -> None:
         await self._actions_ended.wait()

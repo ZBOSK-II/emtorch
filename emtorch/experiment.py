@@ -29,6 +29,12 @@ def execute(args: Arguments, config: dict[str, Any]) -> ResultsCollector:
 
             instances = CaseInstance.list_from(args)
             for index, instance in enumerate(instances):
+                if context.experiment_ended:
+                    logger.error(
+                        f"Experiment ended early, {len(instances) - index}"
+                        " case(s) not executed"
+                    )
+                    break
                 with context.enter_case(instance) as case_context:
                     logger.info(
                         f"Progress [{index+1}/{len(instances)}] - {case_context.case.identifier}"

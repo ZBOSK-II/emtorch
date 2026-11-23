@@ -164,8 +164,10 @@ class Case:
 
         await self._setups.execute(context)
         async with self._monitoring.monitor(context):
-            await self._actions.execute(context)
-            context.notify_actions_ended()
+            try:
+                await self._actions.execute(context)
+            finally:
+                context.notify_actions_ended()
         await self._checks.execute(context)
 
         logger.info(f"Finished case {context.case.identifier}")

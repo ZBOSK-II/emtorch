@@ -1,0 +1,16 @@
+[setups.setup]
+type = "shell"
+cmd = "true"
+
+[actions.failing]
+type = "shell"
+cmd = "exit 1"
+
+[actions.next]
+type = "shell"
+cmd = "true"
+
+[checks.once]
+type = "shell"
+cmd = "true"
+when = "once"

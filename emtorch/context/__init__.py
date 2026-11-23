@@ -67,6 +67,7 @@ class Context:
         self._mapping = self.config.mappings | args.mapping
         self._results = ResultsCollector(config_raw, args)
         self._first_case_executed = False
+        self._experiment_ended = False
 
     @property
     def config(self) -> Case.Config:
@@ -103,6 +104,13 @@ class Context:
     def mark_first_case_executed(self) -> None:
         self._first_case_executed = True
 
+    @property
+    def experiment_ended(self) -> bool:
+        return self._experiment_ended
+
+    def end_experiment(self) -> None:
+        self._experiment_ended = True
+
     def enter_case(self, case: CaseInstance) -> "CaseContext":
         return CaseContext(self, case)
 
@@ -124,6 +132,7 @@ class CaseContext:
         self._case = case
         self._data = DataRegistry()
         self._actions_ended = asyncio.Event()
+        self._case_aborted = False
         self._mapping = parent.mapping | {
             "EMTORCH_CASE_ID": str(case.identifier),
             "EMTORCH_DATA_PATH": str(case.data.path),
@@ -157,6 +166,13 @@ class CaseContext:
     @property
     def first_case_executed(self) -> bool:
         return self.parent.first_case_executed
+
+    @property
+    def case_aborted(self) -> bool:
+        return self._case_aborted
+
+    def abort_case(self) -> None:
+        self._case_aborted = True
 
     async def wait_for_actions_ended(self) -> None:
         await self._actions_ended.wait()

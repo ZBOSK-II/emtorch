@@ -33,8 +33,11 @@ class SubTaskResults:
         for r in results:
             self._counter[r] = 0
 
+    def is_failure(self, result: str) -> bool:
+        return result != self._success
+
     def collect(self, result: str) -> None:
-        if result != self._success:
+        if self.is_failure(result):
             self._collector.failed_count += 1
         self._counter[result] += 1
         self._collector.data.current.subtasks[self._name] = result

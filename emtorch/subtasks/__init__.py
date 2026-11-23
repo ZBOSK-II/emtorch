@@ -136,14 +136,13 @@ class SubTaskDelays:
         )
 
 
-class RunMode(StrEnum):
-    ALWAYS = auto()
-    NEVER = auto()
-    ONCE = auto()
-    PER_DATA = auto()
+class HyphenatedStrEnum(StrEnum):
+    @property
+    def hyphenated(self) -> str:
+        return self.value.replace("_", "-")
 
     @classmethod
-    def _missing_(cls, value: Any) -> RunMode | None:
+    def _missing_(cls, value: Any) -> Self | None:
         if isinstance(value, str):
             normalized = value.replace("-", "_")
             for member in cls:
@@ -157,9 +156,23 @@ class RunMode(StrEnum):
     ) -> dict[str, Any]:
         schema = handler(core_schema)
         schema["enum"] = [m.value for m in cls] + [
-            m.value.replace("_", "-") for m in cls if "_" in m.value
+            m.hyphenated for m in cls if "_" in m.value
         ]
         return schema
+
+
+class RunMode(HyphenatedStrEnum):
+    ALWAYS = auto()
+    NEVER = auto()
+    ONCE = auto()
+    PER_DATA = auto()
+
+
+class OnFailure(HyphenatedStrEnum):
+    PROCEED = auto()
+    SKIP_PHASE = auto()
+    SKIP_CASE = auto()
+    END_EXPERIMENT = auto()
 
 
 class RunPolicy(ABC):
@@ -232,6 +245,13 @@ class SubTaskInstance:
         when: Annotated[
             RunMode, Doc("when the sub-task is executed, considering all test cases")
         ] = RunMode.ALWAYS
+        on_failure: Annotated[
+            OnFailure,
+            Doc(
+                "what to do when the sub-task fails: 'proceed', skip the rest of the"
+                " phase ('skip-phase') or the case ('skip-case'), or 'end-experiment'"
+            ),
+        ] = OnFailure.PROCEED
 
     # TOML bare key characters - names usable in results and '--override' paths
     NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]+")
@@ -290,10 +310,12 @@ class SubTaskInstance:
     def logger(self) -> LoggerAdapter:
         return self._logger
 
-    async def execute(self, context: CaseContext, ready: asyncio.Event) -> None:
-        """
-        Executes the sub-task, setting `ready` once following sub-tasks may start.
-        """
+    def skip_after_failure(self) -> None:
+        self.logger.info(f"Skipping {self.name} due to an earlier failure")
+        self._results.skip()
+
+    async def execute(self, context: CaseContext, ready: asyncio.Event) -> OnFailure:
+        reaction = OnFailure.PROCEED
         self.logger.info(f"Starting {self.name}")
         subcontext = SubTaskContext(context, self, ready)
         should_run = self._when.should_run(subcontext)
@@ -304,7 +326,9 @@ class SubTaskInstance:
             await self._delays.wait_before(subcontext)
             result = await self._subtask.execute(subcontext)
             self._results.collect(result)
-            await self._delays.wait_after(subcontext)
+            reaction = self._react(context, result)
+            if reaction == OnFailure.PROCEED:
+                await self._delays.wait_after(subcontext)
         else:
             self.logger.info(f"Skipping {self.name}")
             self._results.skip()
@@ -312,6 +336,22 @@ class SubTaskInstance:
             self.logger.warning(f"{self.name} finished without becoming ready")
             ready.set()
         self.logger.info(f"Finished {self.name}")
+        return reaction
+
+    def _react(self, context: CaseContext, result: str) -> OnFailure:
+        on_failure = self._config.on_failure
+        if on_failure == OnFailure.PROCEED or not self._results.is_failure(result):
+            return OnFailure.PROCEED
+        self.logger.warning(
+            f"{self.name} failed with '{result}', {on_failure.hyphenated}"
+        )
+        match on_failure:
+            case OnFailure.SKIP_CASE:
+                context.abort_case()
+            case OnFailure.END_EXPERIMENT:
+                context.abort_case()
+                context.parent.end_experiment()
+        return on_failure
 
 
 class SubTaskContext:
@@ -394,18 +434,33 @@ class SubTasks:
     async def execute(self, context: CaseContext) -> None:
         logger.info(f"Executing {self.name}")
 
+        phase_aborted = False
         for task in self._subtasks:
-            await task.execute(context, asyncio.Event())
+            if phase_aborted or context.case_aborted:
+                task.skip_after_failure()
+            else:
+                reaction = await task.execute(context, asyncio.Event())
+                phase_aborted = reaction != OnFailure.PROCEED
 
         logger.info(f"Finished {self.name}")
 
     @asynccontextmanager
     async def monitor(self, context: CaseContext) -> AsyncIterator[None]:
         logger.info(f"Starting {self.name}")
+        phase_aborted = False
+
+        async def run(task: SubTaskInstance, ready: asyncio.Event) -> None:
+            nonlocal phase_aborted
+            if await task.execute(context, ready) != OnFailure.PROCEED:
+                phase_aborted = True
+
         async with asyncio.TaskGroup() as group:
             for task in self._subtasks:
+                if phase_aborted or context.case_aborted:
+                    task.skip_after_failure()
+                    continue
                 ready = asyncio.Event()
-                group.create_task(task.execute(context, ready))
+                group.create_task(run(task, ready))
                 # next task starts only after the previous one is initialized
                 await ready.wait()
             yield

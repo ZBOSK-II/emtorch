@@ -187,6 +187,22 @@ The table holds:
  * `type` - type of the sub-task (see SubTasks below)
  * `delays` - (optional) delays before and after execution of the sub-task
  * `when` - (optional) `always|never|once|per-data`, controls when the sub-task is executed
+ * `on_failure` - (optional) `proceed|skip-phase|skip-case|end-experiment`, what happens when
+   the sub-task fails (any result other than `success`):
+   * `proceed` (default) - nothing, execution continues
+   * `skip-phase` - remaining sub-tasks of the same sequence are skipped (in `monitoring`, no
+     further monitors are started, actions still run; a monitor failing after all monitors
+     started has no effect)
+   * `skip-case` - all remaining sub-tasks of the case are skipped, checks included
+   * `end-experiment` - as `skip-case`, and no further cases are executed
+
+   Skipped sub-tasks are recorded as skipped (`null`) and do not consume their `when` policy.
+   A failed sub-task with a reaction other than `proceed` does not wait its `after` delay.
+   Running sub-tasks are never interrupted: a monitor failing while actions run prevents only
+   the following actions from starting. A monitor holds back the following monitors and actions
+   only when it signals readiness (e.g. `ready_pattern`), so set it to stop the case on
+   a monitor that fails to start. A monitor stopped with `signal` should exit with 0,
+   as otherwise it fails and its `on_failure` applies (e.g. skipping the checks).
  * all the remaining keys are arguments of the given sub-task type
 
 To validate a configuration without executing the experiment, use

@@ -1,0 +1,18 @@
+[monitoring.running]
+type = "shell"
+cmd = "sleep 0.2; echo still running"
+timeout = 5
+
+[monitoring.dead]
+type = "shell"
+cmd = "exit 1"
+ready_pattern = "never"
+on_failure = "skip-case"
+
+[monitoring.later]
+type = "shell"
+cmd = "true"
+
+[actions.action]
+type = "shell"
+cmd = "true"

@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - `ready_pattern` and `ready_timeout` arguments of `shell`, `exec` and `remote` sub-tasks: the
    sub-task is considered ready once an output line matches the regular expression; if it does
    not match in time, the program is killed and the sub-task results in new `not_ready` code
+ - `on_failure` setting of sub-tasks: `proceed` (default), `skip-phase`, `skip-case` or
+   `end-experiment`; sub-tasks skipped due to a failure are recorded as skipped
 
 ### Changed
  - **breaking**: sub-tasks are defined as named tables `[setups.NAME]` with `type` and arguments
