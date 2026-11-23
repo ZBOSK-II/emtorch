@@ -13,7 +13,8 @@ from typing import Annotated
 from ..config import Doc, configclass
 from ..context.template import Template
 from . import BasicSubTask, LoggerAdapter, SubTaskContext
-from .subprocess import Exec, stream_logger
+from .process import stream_logger
+from .subprocess import Exec
 
 
 async def detect_ping_is_alive(
@@ -82,6 +83,7 @@ class PingIsAlive(BasicSubTask):
             stderr=asyncio.subprocess.PIPE,
         )
 
+        assert proc.stderr
         try:
             result, _, _ = await asyncio.gather(
                 asyncio.create_task(

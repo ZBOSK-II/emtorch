@@ -123,6 +123,10 @@ class CoapMonitor(TypedSubTask[CoapMonitorResult]):
         self._config = config
 
     @property
+    def signals_ready(self) -> bool:
+        return True
+
+    @property
     def result_type(self) -> type[CoapMonitorResult]:
         return CoapMonitorResult
 
@@ -140,6 +144,7 @@ class CoapMonitor(TypedSubTask[CoapMonitorResult]):
         )
 
         context.data.register(context.subtask.name, CoapConnection(transport, protocol))
+        context.notify_ready()
 
         try:
             await delay.wait(context.logger)

@@ -8,29 +8,37 @@ Module containing subprocess subtask.
 
 import asyncio
 import asyncio.subprocess
+import os
+import re
 from abc import abstractmethod
 from dataclasses import field
+from signal import SIGKILL
 from typing import Annotated
 
 from ..config import Doc, configclass
 from ..config.signal import Signal
 from ..context.template import Template
-from . import BasicSubTask, LoggerAdapter, SubTaskContext
+from . import SubTaskContext
+from .process import (
+    READY_PATTERN_DOC,
+    READY_TIMEOUT_DOC,
+    SIGNAL_DOC,
+    NotReadyError,
+    ProcessResult,
+    ProcessSubTask,
+)
 
 
-async def stream_logger(
-    name: str, logger: LoggerAdapter, reader: asyncio.StreamReader | None
-) -> None:
-    assert reader
-    while not reader.at_eof():
-        line = await reader.readline()
-        if line:
-            logger.info(f"{name} - {bytes(line.rstrip())!r}")
+class Subprocess(ProcessSubTask):
 
-
-class Subprocess(BasicSubTask):
-
-    def __init__(self, signal: Signal | None, timeout: float):
+    def __init__(
+        self,
+        signal: Signal | None,
+        timeout: float,
+        ready_pattern: re.Pattern[str] | None,
+        ready_timeout: float | None,
+    ):
+        super().__init__(ready_pattern, ready_timeout)
         self._signal = signal
         self._timeout = timeout
 
@@ -40,24 +48,31 @@ class Subprocess(BasicSubTask):
     ) -> asyncio.subprocess.Process:
         pass
 
-    async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
+    async def execute(self, context: SubTaskContext) -> ProcessResult:
         proc = await self.create_process(context)
 
         self._install_signal(proc, context)
 
+        async def kill() -> None:
+            # the whole group, as a shell does not pass the signal to its children
+            try:
+                os.killpg(proc.pid, SIGKILL)
+            except ProcessLookupError:
+                pass
+
+        assert proc.stdout and proc.stderr
         try:
-            retcode, _, _ = await asyncio.gather(
+            retcode = await self._readiness.supervise(
+                context,
                 asyncio.wait_for(proc.wait(), self._timeout),
-                asyncio.create_task(
-                    stream_logger("STDOUT", context.logger, proc.stdout)
-                ),
-                asyncio.create_task(
-                    stream_logger("STDERR", context.logger, proc.stderr)
-                ),
+                [("STDOUT", proc.stdout), ("STDERR", proc.stderr)],
+                kill,
             )
         except TimeoutError:
             context.logger.warning("Operation timed out")
             return self.Result.TIMEOUT
+        except NotReadyError:
+            return self.Result.NOT_READY
 
         if retcode != 0:
             context.logger.warning(f"Operation returned {retcode}")
@@ -93,13 +108,14 @@ class Shell(Subprocess):
     class Config:
         cmd: Annotated[Template, Doc("shell command to be executed")]
         timeout: Annotated[float, Doc("execution timeout")] = 1.0
-        signal: Annotated[
-            Signal | None,
-            Doc("signal name to be sent to the program at the end of monitoring"),
-        ] = None
+        signal: Annotated[Signal | None, SIGNAL_DOC] = None
+        ready_pattern: Annotated[re.Pattern[str] | None, READY_PATTERN_DOC] = None
+        ready_timeout: Annotated[float | None, READY_TIMEOUT_DOC] = None
 
     def __init__(self, config: Config):
-        super().__init__(config.signal, config.timeout)
+        super().__init__(
+            config.signal, config.timeout, config.ready_pattern, config.ready_timeout
+        )
         self._config = config
 
     async def create_process(
@@ -110,7 +126,10 @@ class Shell(Subprocess):
         context.logger.info(f"Starting shell command: {cmd}")
 
         return await asyncio.create_subprocess_shell(
-            cmd=cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            cmd=cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            process_group=0,
         )
 
 
@@ -127,13 +146,14 @@ class Exec(Subprocess):
             default_factory=list
         )
         timeout: Annotated[float, Doc("execution timeout")] = 1.0
-        signal: Annotated[
-            Signal | None,
-            Doc("signal name to be sent to the program at the end of monitoring"),
-        ] = None
+        signal: Annotated[Signal | None, SIGNAL_DOC] = None
+        ready_pattern: Annotated[re.Pattern[str] | None, READY_PATTERN_DOC] = None
+        ready_timeout: Annotated[float | None, READY_TIMEOUT_DOC] = None
 
     def __init__(self, config: Config):
-        super().__init__(config.signal, config.timeout)
+        super().__init__(
+            config.signal, config.timeout, config.ready_pattern, config.ready_timeout
+        )
         self._config = config
 
     async def create_process(
@@ -149,4 +169,5 @@ class Exec(Subprocess):
             *args,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            process_group=0,
         )

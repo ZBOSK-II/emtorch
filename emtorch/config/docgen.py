@@ -7,8 +7,10 @@
 Module containing utilities for generating configuration documentation.
 """
 
+import re
 import string
 from dataclasses import dataclass
+from types import NoneType
 from typing import (
     Annotated,
     Any,
@@ -86,8 +88,9 @@ def __name_of_type(t: type[Any] | str | Any) -> str:
         return "list"
 
     if origin is Union:
-        if args and args[0] is Signal:
-            return "string"
+        non_none = [a for a in args if a is not NoneType]
+        if len(non_none) == 1:
+            return __name_of_type(non_none[0])
 
     match t:
         case str():
@@ -110,6 +113,12 @@ def __name_of_type(t: type[Any] | str | Any) -> str:
 
         case _ if isinstance(t, type) and issubclass(t, string.Template):
             return "$-string"
+
+        case _ if t is Signal:
+            return "string"
+
+        case _ if origin is re.Pattern:
+            return "regex"
 
         case _ if t is NetworkAddress:
             return "host: string, port: int"

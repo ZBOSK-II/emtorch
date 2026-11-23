@@ -11,10 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - `config-check` command validating configuration without executing the experiment
  - `config-schema` command generating JSON Schema of the configuration, for editors
+ - `ready_pattern` and `ready_timeout` arguments of `shell`, `exec` and `remote` sub-tasks: the
+   sub-task is considered ready once an output line matches the regular expression; if it does
+   not match in time, the program is killed and the sub-task results in new `not_ready` code
 
 ### Changed
  - **breaking**: sub-tasks are defined as named tables `[setups.NAME]` with `type` and arguments
    in a single table, instead of `[[setups]]` with `name` and a separate `[setups.args]` table
+ - monitoring sub-tasks may opt-in for readiness reporting: following monitoring sub-tasks and
+   actions are started only after such sub-task is ready (`coap-monitor` once its endpoint is
+   registered, `shell`/`exec`/`remote` when `ready_pattern` is set); other sub-tasks start
+   right away, as before
+ - `shell` and `exec` programs run in their own process group, so a program killed as not ready
+   is killed together with its children; such programs no longer receive terminal's Ctrl-C
 
 ### Dependencies updated
  - pylint bump from 4.1.3 to 4.1.4 [\#104](https://github.com/ZBOSK-II/emtorch/pull/104) ([dependabot](https://github.com/dependabot))

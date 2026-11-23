@@ -38,6 +38,7 @@ the output prefix and the current date.
   \tfailure: 0 (esc)
   \terror: 0 (esc)
   \ttimeout: 0 (esc)
+  \tnot_ready: 0 (esc)
   monitoring.count:
   \tsuccess: 2 (esc)
   \tfailure: 0 (esc)
@@ -53,6 +54,7 @@ the output prefix and the current date.
   \tfailure: 0 (esc)
   \terror: 0 (esc)
   \ttimeout: 0 (esc)
+  \tnot_ready: 0 (esc)
   checks.report:
   \tsuccess: 2 (esc)
   \tfailure: 0 (esc)

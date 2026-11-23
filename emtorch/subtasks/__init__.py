@@ -58,6 +58,16 @@ else:
 class SubTask(ABC):
 
     @property
+    def signals_ready(self) -> bool:
+        """
+        Opt-in for readiness reporting: when True, the sub-task calls
+        `context.notify_ready()` once initialized, and following monitoring sub-tasks
+        (and actions) are not started before that. Otherwise the sub-task does not
+        hold anything back.
+        """
+        return False
+
+    @property
     @abstractmethod
     def result_type(self) -> type[StrEnum]:
         pass
@@ -280,10 +290,17 @@ class SubTaskInstance:
     def logger(self) -> LoggerAdapter:
         return self._logger
 
-    async def execute(self, context: CaseContext) -> None:
+    async def execute(self, context: CaseContext, ready: asyncio.Event) -> None:
+        """
+        Executes the sub-task, setting `ready` once following sub-tasks may start.
+        """
         self.logger.info(f"Starting {self.name}")
-        subcontext = SubTaskContext(context, self)
-        if self._when.should_run(subcontext):
+        subcontext = SubTaskContext(context, self, ready)
+        should_run = self._when.should_run(subcontext)
+        if not (should_run and self._subtask.signals_ready):
+            # does not hold back following sub-tasks
+            ready.set()
+        if should_run:
             await self._delays.wait_before(subcontext)
             result = await self._subtask.execute(subcontext)
             self._results.collect(result)
@@ -291,14 +308,20 @@ class SubTaskInstance:
         else:
             self.logger.info(f"Skipping {self.name}")
             self._results.skip()
+        if not ready.is_set():
+            self.logger.warning(f"{self.name} finished without becoming ready")
+            ready.set()
         self.logger.info(f"Finished {self.name}")
 
 
 class SubTaskContext:
 
-    def __init__(self, parent: CaseContext, subtask: SubTaskInstance):
+    def __init__(
+        self, parent: CaseContext, subtask: SubTaskInstance, ready: asyncio.Event
+    ):
         self._parent = parent
         self._subtask = subtask
+        self._ready = ready
 
     @property
     def parent(self) -> CaseContext:
@@ -335,6 +358,11 @@ class SubTaskContext:
     async def wait_for_actions_ended(self) -> None:
         await self.parent.wait_for_actions_ended()
 
+    def notify_ready(self) -> None:
+        if not self._ready.is_set():
+            self.logger.info(f"Ready {self.subtask.name}")
+            self._ready.set()
+
 
 class _SubTasksJsonSchema:
     def __get_pydantic_json_schema__(
@@ -367,7 +395,7 @@ class SubTasks:
         logger.info(f"Executing {self.name}")
 
         for task in self._subtasks:
-            await task.execute(context)
+            await task.execute(context, asyncio.Event())
 
         logger.info(f"Finished {self.name}")
 
@@ -376,7 +404,10 @@ class SubTasks:
         logger.info(f"Starting {self.name}")
         async with asyncio.TaskGroup() as group:
             for task in self._subtasks:
-                group.create_task(task.execute(context))
+                ready = asyncio.Event()
+                group.create_task(task.execute(context, ready))
+                # next task starts only after the previous one is initialized
+                await ready.wait()
             yield
         logger.info(f"Finished {self.name}")
 

@@ -7,6 +7,7 @@ Module representing remote (SSH) task as sub-tasks.
 """
 
 import asyncio
+import re
 from typing import Annotated
 
 import asyncssh
@@ -15,18 +16,18 @@ from ..config import Doc, configclass
 from ..config.signal import Signal
 from ..config.ssh import ConnectionConfig
 from ..context.template import Template
-from . import BasicSubTask, LoggerAdapter, SubTaskContext
+from . import SubTaskContext
+from .process import (
+    READY_PATTERN_DOC,
+    READY_TIMEOUT_DOC,
+    SIGNAL_DOC,
+    NotReadyError,
+    ProcessResult,
+    ProcessSubTask,
+)
 
 
-async def stream_logger(
-    name: str, logger: LoggerAdapter, stream: asyncssh.SSHReader[str]
-) -> None:
-    async for line in stream:
-        if line:
-            logger.info(f"{name} - {line.rstrip()}")
-
-
-class Remote(BasicSubTask):
+class Remote(ProcessSubTask):
     """
     Executes command on remote machine connected via SSH.
     """
@@ -36,12 +37,12 @@ class Remote(BasicSubTask):
         connection: Annotated[ConnectionConfig, Doc("SSH connection configuration")]
         cmd: Annotated[Template, Doc("command to be executed remotely")]
         timeout: Annotated[float, Doc("operation timeout")] = 5
-        signal: Annotated[
-            Signal | None,
-            Doc("signal name to be sent to the program at the end of monitoring"),
-        ] = None
+        signal: Annotated[Signal | None, SIGNAL_DOC] = None
+        ready_pattern: Annotated[re.Pattern[str] | None, READY_PATTERN_DOC] = None
+        ready_timeout: Annotated[float | None, READY_TIMEOUT_DOC] = None
 
     def __init__(self, config: Config):
+        super().__init__(config.ready_pattern, config.ready_timeout)
         self._config = config
 
     def _install_signal(
@@ -65,7 +66,7 @@ class Remote(BasicSubTask):
 
         asyncio.create_task(signal_process())
 
-    async def execute(self, context: SubTaskContext) -> BasicSubTask.Result:
+    async def execute(self, context: SubTaskContext) -> ProcessResult:
         cmd = "echo $$; exec " + self._config.cmd.evaluate(context.parent)
 
         context.logger.info(f"Executing remotely: {cmd}")
@@ -79,16 +80,15 @@ class Remote(BasicSubTask):
 
                 self._install_signal(pid, conn, context)
 
-                await asyncio.gather(
-                    asyncio.wait_for(proc.wait(), self._config.timeout),
-                    asyncio.create_task(
-                        stream_logger("STDOUT", context.logger, proc.stdout)
-                    ),
-                    asyncio.create_task(
-                        stream_logger("STDERR", context.logger, proc.stderr)
-                    ),
-                )
+                async def kill() -> None:
+                    await conn.run(f"kill -KILL -{pid.strip()}")
 
+                await self._readiness.supervise(
+                    context,
+                    asyncio.wait_for(proc.wait(), self._config.timeout),
+                    [("STDOUT", proc.stdout), ("STDERR", proc.stderr)],
+                    kill,
+                )
                 if proc.exit_status != 0:
                     context.logger.warning(
                         f"Command exited with code: {proc.exit_status}"
@@ -104,6 +104,8 @@ class Remote(BasicSubTask):
         except TimeoutError:
             context.logger.warning("Command timed out")
             return self.Result.TIMEOUT
+        except NotReadyError:
+            return self.Result.NOT_READY
 
         context.logger.info("Command finished successfully")
         return self.Result.SUCCESS

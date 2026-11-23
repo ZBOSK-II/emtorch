@@ -215,3 +215,22 @@ def test_empty_keys_are_shown_in_locations() -> None:
         '"": Unexpected keyword argument',
         'setups.a."": Unexpected keyword argument',
     ]
+
+
+def test_invalid_ready_pattern_is_reported_on_its_field() -> None:
+    shell = {"type": "shell", "cmd": "true", "ready_pattern": "ready("}
+
+    errors = _validate({"monitoring": {"a": shell}})
+
+    assert len(errors) == 1
+    assert errors[0].startswith("monitoring.a.ready_pattern: ")
+
+
+def test_ready_timeout_without_ready_pattern_is_reported() -> None:
+    shell = {"type": "shell", "cmd": "true", "ready_timeout": 1.0}
+
+    errors = _validate({"monitoring": {"a": shell}})
+
+    assert errors == [
+        "monitoring.a: 'ready_timeout' requires 'ready_pattern' [ValueError]"
+    ]

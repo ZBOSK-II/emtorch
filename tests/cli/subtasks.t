@@ -46,6 +46,8 @@ Subtask documentation.
     cmd                      - ($-string) shell command to be executed
     timeout                  - (float) execution timeout (default: 1.0)
     signal                   - (string) signal name to be sent to the program at the end of monitoring (default: None)
+    ready_pattern            - (regex) regular expression; the sub-task is considered ready (next monitoring sub-task is started) once an output line matches it, instead of right after start (default: None)
+    ready_timeout            - (float) time to wait for `ready_pattern` to match, in seconds; when exceeded the program is killed and the sub-task results in `not_ready`; no limit when not set (default: None)
 
 Missing or unknown subtask name.
 
