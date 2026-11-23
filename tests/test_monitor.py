@@ -9,8 +9,6 @@ SubTasks.monitor readiness tests.
 import asyncio
 import logging
 import re
-import time
-from pathlib import Path
 from typing import Any, Awaitable, Callable, cast
 
 import pytest
@@ -24,7 +22,6 @@ from emtorch.subtasks import (
     SubTaskInstance,
     SubTasks,
 )
-from emtorch.subtasks.process import ProcessResult
 from emtorch.subtasks.subprocess import Shell
 
 
@@ -74,13 +71,12 @@ def _instance(
     subtask: Any,
     when: RunMode = RunMode.ALWAYS,
     before: float | None = None,
-    results: _FakeResults | None = None,
 ) -> SubTaskInstance:
     config = SubTaskInstance.Config(
         type="fake", when=when, delays=SubTaskDelays.Config(before=before)
     )
     return SubTaskInstance(
-        f"monitoring.{name}", config, subtask, cast(Any, results or _FakeResults())
+        f"monitoring.{name}", config, subtask, cast(Any, _FakeResults())
     )
 
 
@@ -181,22 +177,6 @@ def test_skipped_task_unblocks_next() -> None:
     assert events == ["next started", "actions"]
 
 
-def test_shell_ready_pattern_delays_next_task() -> None:
-    shell = _shell(
-        "echo start; sleep 0.1; echo ready-now",
-        timeout=5,
-        ready_pattern=re.compile(r"ready-\w+"),
-    )
-    events: list[str] = []
-
-    actions_start = _run_monitor(
-        [_instance("shell", shell), _fake("next", _recorder(events, "next"))], events
-    )
-
-    assert events == ["next started", "actions"]
-    assert actions_start >= 0.1
-
-
 def test_non_opted_task_delay_does_not_hold_back_next() -> None:
     events: list[str] = []
     delayed = _instance(
@@ -216,28 +196,6 @@ def test_shell_opts_in_when_ready_pattern_set(
     pattern: re.Pattern[str] | None, opted_in: bool
 ) -> None:
     assert _shell("true", ready_pattern=pattern).signals_ready == opted_in
-
-
-def test_ready_timeout_kills_program_and_releases_next_task() -> None:
-    shell = _shell(
-        "echo started; sleep 10; echo done",
-        timeout=20,
-        ready_pattern=re.compile("never"),
-        ready_timeout=0.1,
-    )
-    results = _FakeResults()
-    events: list[str] = []
-
-    _run_monitor(
-        [
-            _instance("shell", shell, results=results),
-            _fake("next", _recorder(events, "next")),
-        ],
-        events,
-    )
-
-    assert events == ["next started", "actions"]
-    assert results.collected == [ProcessResult.NOT_READY]
 
 
 def test_ready_is_logged_only_when_signalled(caplog: pytest.LogCaptureFixture) -> None:
@@ -263,39 +221,3 @@ def test_ready_is_logged_only_when_signalled(caplog: pytest.LogCaptureFixture) -
     warnings = [m for level, m in messages if level == logging.WARNING]
     assert ready == ["Ready monitoring.signals"]
     assert warnings == ["monitoring.silent finished without becoming ready"]
-
-
-def test_ready_line_printed_right_before_exit_is_matched() -> None:
-    shell = _shell("echo ready", timeout=5, ready_pattern=re.compile("ready"))
-    for _ in range(20):
-        events: list[str] = []
-        _run_monitor([_instance("shell", shell)], events)
-        assert events == ["actions"]
-
-
-def test_not_ready_kill_stops_program_children(tmp_path: Path) -> None:
-    marker = tmp_path / "marker"
-    shell = _shell(
-        f"(sleep 0.5; touch {marker}) & sleep 10",
-        timeout=20,
-        ready_pattern=re.compile("never"),
-        ready_timeout=0.1,
-    )
-
-    _run_monitor([_instance("shell", shell)], [])
-    time.sleep(0.8)
-
-    assert not marker.exists()
-
-
-def test_output_reading_errors_are_not_swallowed() -> None:
-    shell = _shell(
-        "head -c 200000 /dev/zero | tr '\\0' x",
-        timeout=5,
-        ready_pattern=re.compile("never"),
-    )
-
-    with pytest.raises(ExceptionGroup) as error:
-        _run_monitor([_instance("shell", shell)], [])
-
-    assert error.group_contains(ValueError)

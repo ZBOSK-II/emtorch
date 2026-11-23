@@ -1,0 +1,14 @@
+[monitoring.shell]
+type = "shell"
+cmd = "echo start; sleep 0.1; echo ready-now"
+timeout = 20
+ready_pattern = "ready-\\w+"
+
+[monitoring.next]
+type = "shell"
+cmd = "true"
+timeout = 5
+
+[actions.action]
+type = "shell"
+cmd = "true"
