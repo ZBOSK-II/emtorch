@@ -73,7 +73,7 @@ class LoggerMatcher[T: ValuePoint](BasicSubTask):
 
 class LoggerIntMatcher(LoggerMatcher[int]):
     """
-    Scans Sub Task logs for occurrence of integer value.
+    Scans sub-task logs for occurrence of integer value.
     """
 
     def __init__(self, config: LoggerIntMatcher.Config):
@@ -82,7 +82,7 @@ class LoggerIntMatcher(LoggerMatcher[int]):
 
 class LoggerFloatMatcher(LoggerMatcher[float]):
     """
-    Scans Sub Task logs for occurrence of float value.
+    Scans sub-task logs for occurrence of float value.
     """
 
     def __init__(self, config: LoggerFloatMatcher.Config):

@@ -160,7 +160,7 @@ class CoapMonitor(TypedSubTask[CoapMonitorResult]):
 
 class CoapSend(TypedSubTask[CoapProtocol.Result]):
     """
-    Sends experiment data as CoAP message and waits for response.
+    Sends experiment data as a CoAP message and waits for the response.
     """
 
     @configclass

@@ -62,7 +62,6 @@ class Remote(ProcessSubTask):
             await context.wait_for_actions_ended()
             context.logger.info(f"Sending remote signal {signal.name} ({signal.value})")
             await conn.run(f"kill -{signal.value} -{pid}")
-            # proc.send_signal(signal.name)
 
         asyncio.create_task(signal_process())
 

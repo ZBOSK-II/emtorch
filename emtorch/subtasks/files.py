@@ -23,7 +23,7 @@ class FileWriter(BasicSubTask):
     class Config:
         path: Annotated[Template, Doc("path to the file to save")]
         append: Annotated[
-            bool, Doc("if true appends to the file, overwrite it otherwise")
+            bool, Doc("append to the file if true, overwrite it otherwise")
         ] = False
         contents: Annotated[Template, Doc("contents of the file to write")]
         encoding: Annotated[str, Doc("encoding of the file")] = "utf-8"

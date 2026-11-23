@@ -103,7 +103,7 @@ class PingIsAlive(BasicSubTask):
 
 class PingIsStable(Exec):
     """
-    Uses 'ping' to check if given network end point is stable responding.
+    Uses 'ping' to check if given network end point responds stably.
     """
 
     @configclass

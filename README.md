@@ -184,7 +184,7 @@ is used for results identification (and must consist only of letters,
 digits, `_` and `-`).
 Sub-tasks are executed in the order of their definition in the file.
 The table holds:
- * `type` - type of the sub-task (see SubTasks below)
+ * `type` - type of the sub-task (see Sub-tasks below)
  * `delays` - (optional) delays before and after execution of the sub-task
  * `when` - (optional) `always|never|once|per-data`, controls when the sub-task is executed
  * `on_failure` - (optional) `proceed|skip-phase|skip-case|end-experiment`, what happens when
@@ -274,15 +274,15 @@ type = "shell"
 cmd = "process_data --input $EMTORCH_DATA_PATH --id $EMTORCH_CASE_ID"
 ```
 
-SubTasks
-------------------------------------------------------------
-Subtasks are the building blocks of experiments. Each subtask
+Sub-tasks
+-------------------------------------------------------------
+Sub-tasks are the building blocks of experiments. Each sub-task
 has a type, name, and type-specific arguments.
 
-**Available subtask types:**
+**Available sub-task types:**
 
-| Subtask | Purpose |
-|---------|---------|
+| Sub-task | Purpose |
+|----------|---------|
 | `echo` | Print messages to logs |
 | `exec` | Execute programs with arguments |
 | `shell` | Execute shell commands |
@@ -297,9 +297,9 @@ has a type, name, and type-specific arguments.
 | `coap-monitor` | Monitor CoAP protocol messages |
 | `coap-send` | Send CoAP protocol messages |
 
-**For detailed subtask documentation:**
-- Run `emtorch subtasks` to list all available subtasks
-- Run `emtorch subtask <NAME>` to see documentation for a specific subtask
+**For detailed sub-task documentation:**
+- Run `emtorch subtasks` to list all available sub-tasks
+- Run `emtorch subtask <NAME>` to see documentation for a specific sub-task
 
 
 Results

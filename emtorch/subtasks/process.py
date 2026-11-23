@@ -96,8 +96,9 @@ class Readiness:
         settled = asyncio.Event()
         matched = False
 
+        # keeps matching after the process ended, so buffered output can still
+        # signal readiness
         def on_line(line: str) -> bool:
-            # output buffered before the process end is still matched
             nonlocal matched
             if matched:
                 return True

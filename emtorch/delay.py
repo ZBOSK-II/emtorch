@@ -18,9 +18,7 @@ else:
 
 class Delay:
     """
-    Class representing single 'delay' in the experiment.
-    Forces experiment to wait for a given number of seconds.
-    Value of 0 or None means no delay.
+    Waits a given number of seconds; 0 or None means no delay.
     """
 
     def __init__(self, value: float | None, name: str):

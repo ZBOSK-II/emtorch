@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module holding experiment building blocks - sub tasks.
+Module holding experiment building blocks - sub-tasks.
 """
 
 import asyncio
@@ -225,6 +225,15 @@ class PerDataRunPolicy(RunPolicy):
             return False
         self._executed.add(identifier)
         return True
+
+
+class UnknownSubTaskTypeError(KeyError):
+    def __init__(self, name: str):
+        super().__init__(name)
+        self.name = name
+
+    def __str__(self) -> str:
+        return f"Unknown sub-task type '{self.name}'"
 
 
 class SubTaskNameError(ValueError):
@@ -484,7 +493,7 @@ class SubTasksLibrary:
 
         entry = self._entries.get(name)
         if entry is None:
-            raise KeyError(f"Unknown subtask type '{name}'")
+            raise UnknownSubTaskTypeError(name)
 
         cls = entry.load()
         self._check_subtask_class(name, cls)

@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    right away, as before
  - `shell` and `exec` programs run in their own process group, so a program killed as not ready
    is killed together with its children; such programs no longer receive terminal's Ctrl-C
+ - consistent "sub-task" terminology in CLI output, help and sub-task descriptions
 
 ### Dependencies updated
  - pylint bump from 4.1.3 to 4.1.4 [\#104](https://github.com/ZBOSK-II/emtorch/pull/104) ([dependabot](https://github.com/dependabot))

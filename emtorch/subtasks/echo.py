@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module containing echo subtask.
+Module containing the echo sub-task.
 """
 
 from typing import Annotated
@@ -15,7 +15,7 @@ from . import BasicSubTask, SubTaskContext
 
 class Echo(BasicSubTask):
     """
-    Basic echo command, prints to log a provided message.
+    Writes the provided message to the log.
     """
 
     @configclass

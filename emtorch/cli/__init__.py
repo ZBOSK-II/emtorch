@@ -57,9 +57,9 @@ class Cli:
             "config-schema",
             "generates JSON Schema of the configuration, for editors",
         )
-        self.__add_command(SubTasksCommand, "subtasks", "lists all available subtasks")
+        self.__add_command(SubTasksCommand, "subtasks", "lists all available sub-tasks")
         self.__add_command(
-            SubTaskCommand, "subtask", "provides documentation for the given task"
+            SubTaskCommand, "subtask", "provides documentation for the given sub-task"
         )
         self.__add_command(ValuesCommand, "values", "extracts values from results")
         self.__add_command(

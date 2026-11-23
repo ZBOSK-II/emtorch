@@ -67,7 +67,7 @@ def test_malformed_subtasks_keys_are_reported_once() -> None:
 def test_unknown_subtask_type() -> None:
     errors = _validate({"actions": {"a": {"type": "nope"}}})
 
-    assert errors == ["actions.a.type: Unknown subtask type 'nope'"]
+    assert errors == ["actions.a.type: Unknown sub-task type 'nope'"]
 
 
 def test_missing_subtask_type() -> None:

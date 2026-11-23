@@ -126,7 +126,7 @@ def test_descriptions_are_present(schema: dict[str, Any]) -> None:
 
     assert schema["properties"]["actions"]["description"]
     assert subtask["properties"]["when"]["description"]
-    assert echo["description"].startswith("Basic echo command")
+    assert echo["description"].startswith("Writes the provided message")
     assert echo["properties"]["message"]["description"] == "message to write to log"
 
 

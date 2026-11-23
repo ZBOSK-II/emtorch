@@ -11,7 +11,12 @@ from typing import Any
 from pydantic import ValidationError
 
 from ..case import Case
-from ..subtasks import SubTaskFactoryCache, SubTaskInstance, SubTaskNameError
+from ..subtasks import (
+    SubTaskFactoryCache,
+    SubTaskInstance,
+    SubTaskNameError,
+    UnknownSubTaskTypeError,
+)
 from .loader import ConfigLoader
 
 
@@ -73,10 +78,8 @@ class _SubTaskValidator:
         # pylint: disable=broad-exception-caught
         try:
             return self._factories.get(type_name)
-        except KeyError as ex:
-            # unknown sub-task type
-            reason = ex.args[0] if ex.args else ex
-            self._errors.append(f"{self._fullname}.type: {reason}")
+        except UnknownSubTaskTypeError as ex:
+            self._errors.append(f"{self._fullname}.type: {ex}")
         except Exception as ex:
             self._errors.append(_format_exception(f"{self._fullname}.type", ex))
         return None

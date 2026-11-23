@@ -20,10 +20,10 @@ class SubTasksCommand(Command):
         from ..subtasks import SubTasksLibrary
 
         library = SubTasksLibrary()
-        print("Known Sub Tasks:\n")
+        print("Known sub-tasks:\n")
         for name in sorted(library.names()):
             print(f"\t{name}")
         print(
-            "\nType 'emtorch subtask <TASK-NAME>' to get help on the given task's arguments"
+            "\nType 'emtorch subtask <NAME>' to get help on the given sub-task's arguments"
         )
         return 0

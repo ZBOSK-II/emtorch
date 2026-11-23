@@ -94,7 +94,7 @@ def __name_of_type(t: type[Any] | str | Any) -> str:
 
     match t:
         case str():
-            return t  # already string literal
+            return t
 
         case _ if t is int:
             return "int"

@@ -33,7 +33,7 @@ class SubTaskCommand(Command):
         self._add_argument(
             "name",
             nargs=1,
-            help="name of the Sub Task",
+            help="name of the sub-task",
             completer=_NamesCompleter(),
         )
 
