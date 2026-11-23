@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Building blocks shared by process-based sub-tasks (local and remote).
+Building blocks shared by process-based subtasks (local and remote).
 """
 
 import asyncio
@@ -17,12 +17,12 @@ from . import LoggerAdapter, SubTaskContext, TypedSubTask
 
 SIGNAL_DOC = Doc("signal name to be sent to the program at the end of monitoring")
 READY_PATTERN_DOC = Doc(
-    "regular expression; the sub-task is considered ready (next monitoring sub-task"
+    "regular expression; the subtask is considered ready (next monitoring subtask"
     " is started) once an output line matches it, instead of right after start"
 )
 READY_TIMEOUT_DOC = Doc(
     "time to wait for `ready_pattern` to match, in seconds; when exceeded the program"
-    " is killed and the sub-task results in `not_ready`; no limit when not set"
+    " is killed and the subtask results in `not_ready`; no limit when not set"
 )
 
 
@@ -68,8 +68,8 @@ async def stream_logger(
 
 class Readiness:
     """
-    Readiness detection of a process sub-task: ready once an output line matches
-    the pattern. Sub-tasks not configured with a pattern do not opt-in for it.
+    Readiness detection of a process subtask: ready once an output line matches
+    the pattern. Subtasks not configured with a pattern do not opt-in for it.
     """
 
     def __init__(self, pattern: re.Pattern[str] | None, timeout: float | None):
@@ -155,7 +155,7 @@ class Readiness:
 
 class ProcessSubTask(TypedSubTask[ProcessResult]):
     """
-    Base of sub-tasks running a program, optionally opting-in for readiness
+    Base of subtasks running a program, optionally opting-in for readiness
     reporting based on the program output.
     """
 

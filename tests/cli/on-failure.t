@@ -1,4 +1,4 @@
-Reaction to sub-task failures, configured with `on_failure`.
+Reaction to subtask failures, configured with `on_failure`.
 
   $ touch a.bin b.bin c.bin
   $ run() {
@@ -26,7 +26,7 @@ The rest of the phase is skipped, following phases are executed.
   [    INFO](        emtorch.subtasks)<            actions.next>: Skipping actions.next due to an earlier failure
   [    INFO](        emtorch.subtasks)<             checks.once>: Starting checks.once
 
-The rest of the case is skipped, without consuming `when = "once"` of skipped sub-tasks.
+The rest of the case is skipped, without consuming `when = "once"` of skipped subtasks.
 
   $ run case --override actions.failing.on_failure=skip-case \
   >   --override 'actions.failing.cmd=test $EMTORCH_DATA_FILENAME != a.bin' a.bin b.bin
@@ -53,7 +53,7 @@ No more cases are executed.
   [    INFO](        emtorch.subtasks)<             checks.once>: Skipping checks.once due to an earlier failure
   [   ERROR](      emtorch.experiment)<------------------------>: Experiment ended early, 2 case(s) not executed
 
-Successful sub-tasks do not trigger the reaction.
+Successful subtasks do not trigger the reaction.
 
   $ run success --override actions.failing.cmd=true --override actions.failing.on_failure=end-experiment a.bin b.bin
   [    INFO](      emtorch.experiment)<------------------------>: Progress [1/2] - a.bin

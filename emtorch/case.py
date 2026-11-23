@@ -124,16 +124,16 @@ class Case:
             dict[str, str], Doc("values available in $-strings, as $NAME")
         ] = field(default_factory=dict)
         setups: Annotated[
-            SubTasks.Config, Doc("sub-tasks executed sequentially, before the case")
+            SubTasks.Config, Doc("subtasks executed sequentially, before the case")
         ] = field(default_factory=dict)
         monitoring: Annotated[
-            SubTasks.Config, Doc("sub-tasks executed concurrently, during actions")
+            SubTasks.Config, Doc("subtasks executed concurrently, during actions")
         ] = field(default_factory=dict)
         actions: Annotated[
-            SubTasks.Config, Doc("sub-tasks executed sequentially, as the case")
+            SubTasks.Config, Doc("subtasks executed sequentially, as the case")
         ] = field(default_factory=dict)
         checks: Annotated[
-            SubTasks.Config, Doc("sub-tasks executed sequentially, after the case")
+            SubTasks.Config, Doc("subtasks executed sequentially, after the case")
         ] = field(default_factory=dict)
 
         @classmethod

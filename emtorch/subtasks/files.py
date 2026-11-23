@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module holding sub-tasks related to files.
+Module holding subtasks related to files.
 """
 
 import asyncio

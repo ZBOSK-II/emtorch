@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module containing the echo sub-task.
+Module containing the echo subtask.
 """
 
 from typing import Annotated

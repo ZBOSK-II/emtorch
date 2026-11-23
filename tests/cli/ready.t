@@ -1,4 +1,4 @@
-Readiness of monitoring sub-tasks, configured with `ready_pattern` and `ready_timeout`.
+Readiness of monitoring subtasks, configured with `ready_pattern` and `ready_timeout`.
 
   $ touch a.bin
   $ run() {
@@ -26,7 +26,7 @@ A ready line printed right before the program exits is still matched.
   0
   [1]
 
-When the pattern does not match in time, the program is killed, the sub-task results
+When the pattern does not match in time, the program is killed, the subtask results
 in `not_ready` and the next monitor is started.
 
   $ run timeout --override 'monitoring.shell.cmd=echo started; sleep 10; echo done' \

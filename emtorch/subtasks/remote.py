@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module representing remote (SSH) task as sub-tasks.
+Module representing remote (SSH) task as subtasks.
 """
 
 import asyncio

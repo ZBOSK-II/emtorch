@@ -11,22 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
  - `config-check` command validating configuration without executing the experiment
  - `config-schema` command generating JSON Schema of the configuration, for editors
- - `ready_pattern` and `ready_timeout` arguments of `shell`, `exec` and `remote` sub-tasks: the
-   sub-task is considered ready once an output line matches the regular expression; if it does
-   not match in time, the program is killed and the sub-task results in new `not_ready` code
- - `on_failure` setting of sub-tasks: `proceed` (default), `skip-phase`, `skip-case` or
-   `end-experiment`; sub-tasks skipped due to a failure are recorded as skipped
+ - `ready_pattern` and `ready_timeout` arguments of `shell`, `exec` and `remote` subtasks: the
+   subtask is considered ready once an output line matches the regular expression; if it does
+   not match in time, the program is killed and the subtask results in new `not_ready` code
+ - `on_failure` setting of subtasks: `proceed` (default), `skip-phase`, `skip-case` or
+   `end-experiment`; subtasks skipped due to a failure are recorded as skipped
 
 ### Changed
- - **breaking**: sub-tasks are defined as named tables `[setups.NAME]` with `type` and arguments
+ - **breaking**: subtasks are defined as named tables `[setups.NAME]` with `type` and arguments
    in a single table, instead of `[[setups]]` with `name` and a separate `[setups.args]` table
- - monitoring sub-tasks may opt-in for readiness reporting: following monitoring sub-tasks and
-   actions are started only after such sub-task is ready (`coap-monitor` once its endpoint is
-   registered, `shell`/`exec`/`remote` when `ready_pattern` is set); other sub-tasks start
+ - monitoring subtasks may opt-in for readiness reporting: following monitoring subtasks and
+   actions are started only after such subtask is ready (`coap-monitor` once its endpoint is
+   registered, `shell`/`exec`/`remote` when `ready_pattern` is set); other subtasks start
    right away, as before
  - `shell` and `exec` programs run in their own process group, so a program killed as not ready
    is killed together with its children; such programs no longer receive terminal's Ctrl-C
- - consistent "sub-task" terminology in CLI output, help and sub-task descriptions
+ - consistent "subtask" terminology in CLI output, help and subtask descriptions
 
 ### Dependencies updated
  - pylint bump from 4.1.3 to 4.1.4 [\#104](https://github.com/ZBOSK-II/emtorch/pull/104) ([dependabot](https://github.com/dependabot))

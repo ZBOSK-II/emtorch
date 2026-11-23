@@ -67,7 +67,7 @@ def test_malformed_subtasks_keys_are_reported_once() -> None:
 def test_unknown_subtask_type() -> None:
     errors = _validate({"actions": {"a": {"type": "nope"}}})
 
-    assert errors == ["actions.a.type: Unknown sub-task type 'nope'"]
+    assert errors == ["actions.a.type: Unknown subtask type 'nope'"]
 
 
 def test_missing_subtask_type() -> None:
@@ -118,7 +118,7 @@ def test_invalid_subtask_name() -> None:
     errors = _validate({"actions": {"a.b": _echo()}})
 
     assert errors == [
-        "actions.a.b: invalid sub-task name, "
+        "actions.a.b: invalid subtask name, "
         "must consist only of letters, digits, '_' and '-'"
     ]
 

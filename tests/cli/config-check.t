@@ -10,7 +10,7 @@ All errors are reported, overrides are applied before validation.
   >   --override actions.process.foo=1 \
   >   --override checks.report.when=sometimes | sed "s|$TESTDIR/||"
   experiment.toml: 3 error(s) found
-    setups.setup.type: Unknown sub-task type 'nope'
+    setups.setup.type: Unknown subtask type 'nope'
     actions.process.foo: Unexpected keyword argument
     checks.report.when: Input should be 'always', 'never', 'once' or 'per_data'
 

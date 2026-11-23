@@ -25,7 +25,7 @@ DIALECT = "http://json-schema.org/draft-07/schema#"
 REF_TEMPLATE = "#/definitions/{model}"
 
 _MODE: JsonSchemaMode = "validation"
-# keys of generated schemas - internal ones never collide with sub-task names
+# keys of generated schemas - internal ones never collide with subtask names
 _CASE = ("internal", "case")
 _INSTANCE = ("internal", "instance")
 
@@ -106,10 +106,10 @@ def _subtask_configs(
         try:
             subtask, config = library.get(name)
             adapter = TypeAdapter(config)
-            # probe - a sub-task failing here must not break the joint generation
+            # probe - a subtask failing here must not break the joint generation
             adapter.json_schema(schema_generator=_TomlJsonSchema)
         except Exception as ex:
-            logger.warning(f"Sub-task '{name}' arguments left unchecked: {ex}")
+            logger.warning(f"Subtask '{name}' arguments left unchecked: {ex}")
             continue
         result[name] = (subtask, adapter)
     return result

@@ -177,7 +177,7 @@ def test_broken_subtask_arguments_are_not_checked(
 
 
 class _Plugin(BasicSubTask):
-    """Plugin sub-task."""
+    """Plugin subtask."""
 
     def __init__(self, config: Any):
         self._config = config

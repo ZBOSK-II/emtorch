@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module representing SFTP operation as sub-tasks.
+Module representing SFTP operation as subtasks.
 """
 
 import asyncio

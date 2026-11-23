@@ -19,7 +19,12 @@ from emtorch.case import Case
 from emtorch.config import configclass
 from emtorch.config.loader import ConfigLoader
 from emtorch.context import Context
-from emtorch.subtasks import BasicSubTask, SubTaskContext, SubTasksLibrary
+from emtorch.subtasks import (
+    BasicSubTask,
+    SubTaskContext,
+    SubTasksLibrary,
+    UnknownSubTaskTypeError,
+)
 
 
 # pylint: disable=duplicate-code
@@ -96,7 +101,7 @@ def test_missing_type_is_rejected() -> None:
 def test_unknown_type_is_rejected() -> None:
     config = {"actions": {"process": {"type": "no-such-type"}}}
 
-    with pytest.raises(KeyError):
+    with pytest.raises(UnknownSubTaskTypeError, match="Unknown subtask type"):
         _built_subtasks(config)
 
 

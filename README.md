@@ -182,28 +182,28 @@ interval = 1
 Each element of a sequence is a `[SEQUENCE.NAME]` table, where `NAME`
 is used for results identification (and must consist only of letters,
 digits, `_` and `-`).
-Sub-tasks are executed in the order of their definition in the file.
+Subtasks are executed in the order of their definition in the file.
 The table holds:
- * `type` - type of the sub-task (see Sub-tasks below)
- * `delays` - (optional) delays before and after execution of the sub-task
- * `when` - (optional) `always|never|once|per-data`, controls when the sub-task is executed
+ * `type` - type of the subtask (see Subtasks below)
+ * `delays` - (optional) delays before and after execution of the subtask
+ * `when` - (optional) `always|never|once|per-data`, controls when the subtask is executed
  * `on_failure` - (optional) `proceed|skip-phase|skip-case|end-experiment`, what happens when
-   the sub-task fails (any result other than `success`):
+   the subtask fails (any result other than `success`):
    * `proceed` (default) - nothing, execution continues
-   * `skip-phase` - remaining sub-tasks of the same sequence are skipped (in `monitoring`, no
+   * `skip-phase` - remaining subtasks of the same sequence are skipped (in `monitoring`, no
      further monitors are started, actions still run; a monitor failing after all monitors
      started has no effect)
-   * `skip-case` - all remaining sub-tasks of the case are skipped, checks included
+   * `skip-case` - all remaining subtasks of the case are skipped, checks included
    * `end-experiment` - as `skip-case`, and no further cases are executed
 
-   Skipped sub-tasks are recorded as skipped (`null`) and do not consume their `when` policy.
-   A failed sub-task with a reaction other than `proceed` does not wait its `after` delay.
-   Running sub-tasks are never interrupted: a monitor failing while actions run prevents only
+   Skipped subtasks are recorded as skipped (`null`) and do not consume their `when` policy.
+   A failed subtask with a reaction other than `proceed` does not wait its `after` delay.
+   Running subtasks are never interrupted: a monitor failing while actions run prevents only
    the following actions from starting. A monitor holds back the following monitors and actions
    only when it signals readiness (e.g. `ready_pattern`), so set it to stop the case on
    a monitor that fails to start. A monitor stopped with `signal` should exit with 0,
    as otherwise it fails and its `on_failure` applies (e.g. skipping the checks).
- * all the remaining keys are arguments of the given sub-task type
+ * all the remaining keys are arguments of the given subtask type
 
 To validate a configuration without executing the experiment, use
 the `config-check` subcommand:
@@ -212,8 +212,8 @@ the `config-check` subcommand:
 emtorch config-check --config=experiment.toml
 ```
 
-It reports all found problems (unknown keys, unknown sub-task types,
-invalid or missing sub-task arguments, etc.) and exits with a non-zero
+It reports all found problems (unknown keys, unknown subtask types,
+invalid or missing subtask arguments, etc.) and exits with a non-zero
 status when the configuration is invalid. The `--override` option is
 supported as well, so the configuration of a planned `run`, including
 its overrides, can be checked. Mappings (`[mappings]` and `--map`) are
@@ -236,8 +236,8 @@ and point to it in the first line of the configuration file:
 #:schema ./emtorch.schema.json
 ```
 
-The schema describes the sub-tasks installed at the moment of its
-generation - generate it again after installing sub-task plugins
+The schema describes the subtasks installed at the moment of its
+generation - generate it again after installing subtask plugins
 or upgrading emtorch.
 
 The schema expects values of their proper TOML types (e.g. numbers
@@ -274,14 +274,14 @@ type = "shell"
 cmd = "process_data --input $EMTORCH_DATA_PATH --id $EMTORCH_CASE_ID"
 ```
 
-Sub-tasks
+Subtasks
 -------------------------------------------------------------
-Sub-tasks are the building blocks of experiments. Each sub-task
+Subtasks are the building blocks of experiments. Each subtask
 has a type, name, and type-specific arguments.
 
-**Available sub-task types:**
+**Available subtask types:**
 
-| Sub-task | Purpose |
+| Subtask | Purpose |
 |----------|---------|
 | `echo` | Print messages to logs |
 | `exec` | Execute programs with arguments |
@@ -297,9 +297,9 @@ has a type, name, and type-specific arguments.
 | `coap-monitor` | Monitor CoAP protocol messages |
 | `coap-send` | Send CoAP protocol messages |
 
-**For detailed sub-task documentation:**
-- Run `emtorch subtasks` to list all available sub-tasks
-- Run `emtorch subtask <NAME>` to see documentation for a specific sub-task
+**For detailed subtask documentation:**
+- Run `emtorch subtasks` to list all available subtasks
+- Run `emtorch subtask <NAME>` to see documentation for a specific subtask
 
 
 Results
@@ -319,7 +319,7 @@ JSON file has following items:
 Exporting values
 ------------------------------------------------------------
 
-Results can contain "values" captured during the experiment (e.g. by using sub-task
+Results can contain "values" captured during the experiment (e.g. by using subtask
 `logger-int-matcher` ). To extract those into more portable format use `values` command.
 
 For example:

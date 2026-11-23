@@ -27,7 +27,7 @@ class LoggerMatcher[T: ValuePoint](BasicSubTask):
                 " the value (e.g. `prefix=(?P<value>\\d+\\.\\d+)`)"
             ),
         ]
-        subtask: Annotated[str, Doc("subtask which logs should be scanned")]
+        subtask: Annotated[str, Doc("subtask whose logs should be scanned")]
 
     def __init__(
         self,
@@ -73,7 +73,7 @@ class LoggerMatcher[T: ValuePoint](BasicSubTask):
 
 class LoggerIntMatcher(LoggerMatcher[int]):
     """
-    Scans sub-task logs for occurrence of integer value.
+    Scans subtask logs for occurrence of integer value.
     """
 
     def __init__(self, config: LoggerIntMatcher.Config):
@@ -82,7 +82,7 @@ class LoggerIntMatcher(LoggerMatcher[int]):
 
 class LoggerFloatMatcher(LoggerMatcher[float]):
     """
-    Scans sub-task logs for occurrence of float value.
+    Scans subtask logs for occurrence of float value.
     """
 
     def __init__(self, config: LoggerFloatMatcher.Config):

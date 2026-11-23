@@ -63,7 +63,7 @@ class _SubTaskValidator:
         try:
             return SubTaskInstance.check_name(self._subtasks_key, self._name)
         except SubTaskNameError as ex:
-            self._errors.append(f"{ex.location}: invalid sub-task name, {ex.reason}")
+            self._errors.append(f"{ex.location}: invalid subtask name, {ex.reason}")
             return ex.location
 
     def _check_instance_config(self, instance: dict[str, Any]) -> str | None:

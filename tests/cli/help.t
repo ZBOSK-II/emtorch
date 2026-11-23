@@ -10,8 +10,8 @@ Top level help and version.
       run                execute the experiment using configuration
       config-check       validates the configuration without executing it
       config-schema      generates JSON Schema of the configuration, for editors
-      subtasks           lists all available sub-tasks
-      subtask            provides documentation for the given sub-task
+      subtasks           lists all available subtasks
+      subtask            provides documentation for the given subtask
       values             extracts values from results
       shell-completions  installs shell completion script
   

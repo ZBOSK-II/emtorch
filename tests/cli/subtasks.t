@@ -1,7 +1,7 @@
-Listing available sub-tasks.
+Listing available subtasks.
 
   $ emtorch subtasks
-  Known sub-tasks:
+  Known subtasks:
   
   \tcoap-monitor (esc)
   \tcoap-send (esc)
@@ -17,7 +17,7 @@ Listing available sub-tasks.
   \tsftp-put (esc)
   \tshell (esc)
   
-  Type 'emtorch subtask <NAME>' to get help on the given sub-task's arguments
+  Type 'emtorch subtask <NAME>' to get help on the given subtask's arguments
 
 Subtask documentation.
 
@@ -46,10 +46,10 @@ Subtask documentation.
     cmd                      - ($-string) shell command to be executed
     timeout                  - (float) execution timeout (default: 1.0)
     signal                   - (string) signal name to be sent to the program at the end of monitoring (default: None)
-    ready_pattern            - (regex) regular expression; the sub-task is considered ready (next monitoring sub-task is started) once an output line matches it, instead of right after start (default: None)
-    ready_timeout            - (float) time to wait for `ready_pattern` to match, in seconds; when exceeded the program is killed and the sub-task results in `not_ready`; no limit when not set (default: None)
+    ready_pattern            - (regex) regular expression; the subtask is considered ready (next monitoring subtask is started) once an output line matches it, instead of right after start (default: None)
+    ready_timeout            - (float) time to wait for `ready_pattern` to match, in seconds; when exceeded the program is killed and the subtask results in `not_ready`; no limit when not set (default: None)
 
-Missing or unknown sub-task name.
+Missing or unknown subtask name.
 
   $ emtorch subtask
   usage: emtorch subtask [-h] name
@@ -57,5 +57,5 @@ Missing or unknown sub-task name.
   [2]
 
   $ emtorch subtask unknown
-  ERROR: Unknown sub-task type 'unknown' [UnknownSubTaskTypeError]
+  ERROR: Unknown subtask type 'unknown' [UnknownSubTaskTypeError]
   [255]

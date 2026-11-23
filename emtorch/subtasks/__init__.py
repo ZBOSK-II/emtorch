@@ -3,7 +3,7 @@
 # See the LICENSE.txt file in the root of the repository for full details.
 
 """
-Module holding experiment building blocks - sub-tasks.
+Module holding experiment building blocks - subtasks.
 """
 
 import asyncio
@@ -60,9 +60,9 @@ class SubTask(ABC):
     @property
     def signals_ready(self) -> bool:
         """
-        Opt-in for readiness reporting: when True, the sub-task calls
-        `context.notify_ready()` once initialized, and following monitoring sub-tasks
-        (and actions) are not started before that. Otherwise the sub-task does not
+        Opt-in for readiness reporting: when True, the subtask calls
+        `context.notify_ready()` once initialized, and following monitoring subtasks
+        (and actions) are not started before that. Otherwise the subtask does not
         hold anything back.
         """
         return False
@@ -111,10 +111,10 @@ class BasicSubTask(TypedSubTask[BasicResult]):
 class SubTaskDelays:
     @configclass
     class Config:
-        before: Annotated[
-            float | None, Doc("delay before the sub-task, in seconds")
-        ] = None
-        after: Annotated[float | None, Doc("delay after the sub-task, in seconds")] = (
+        before: Annotated[float | None, Doc("delay before the subtask, in seconds")] = (
+            None
+        )
+        after: Annotated[float | None, Doc("delay after the subtask, in seconds")] = (
             None
         )
 
@@ -233,12 +233,12 @@ class UnknownSubTaskTypeError(KeyError):
         self.name = name
 
     def __str__(self) -> str:
-        return f"Unknown sub-task type '{self.name}'"
+        return f"Unknown subtask type '{self.name}'"
 
 
 class SubTaskNameError(ValueError):
     def __init__(self, location: str, reason: str):
-        super().__init__(f"Sub-task name '{location}' {reason}")
+        super().__init__(f"Subtask name '{location}' {reason}")
         self.location = location
         self.reason = reason
 
@@ -247,17 +247,17 @@ class SubTaskInstance:
     # pylint: disable=invalid-field-call
     @configclass
     class Config:
-        type: Annotated[str, Doc("type of the sub-task, see 'emtorch subtasks'")]
+        type: Annotated[str, Doc("type of the subtask, see 'emtorch subtasks'")]
         delays: Annotated[
-            SubTaskDelays.Config, Doc("delays around the sub-task execution")
+            SubTaskDelays.Config, Doc("delays around the subtask execution")
         ] = field(default_factory=SubTaskDelays.Config)
         when: Annotated[
-            RunMode, Doc("when the sub-task is executed, considering all test cases")
+            RunMode, Doc("when the subtask is executed, considering all test cases")
         ] = RunMode.ALWAYS
         on_failure: Annotated[
             OnFailure,
             Doc(
-                "what to do when the sub-task fails: 'proceed', skip the rest of the"
+                "what to do when the subtask fails: 'proceed', skip the rest of the"
                 " phase ('skip-phase') or the case ('skip-case'), or 'end-experiment'"
             ),
         ] = OnFailure.PROCEED
@@ -265,7 +265,7 @@ class SubTaskInstance:
     # TOML bare key characters - names usable in results and '--override' paths
     NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]+")
 
-    # keys of a sub-task table handled by the instance, not by the sub-task itself
+    # keys of a subtask table handled by the instance, not by the subtask itself
     RESERVED_KEYS = frozenset(f.name for f in dataclasses.fields(Config))
 
     @classmethod
@@ -329,7 +329,7 @@ class SubTaskInstance:
         subcontext = SubTaskContext(context, self, ready)
         should_run = self._when.should_run(subcontext)
         if not (should_run and self._subtask.signals_ready):
-            # does not hold back following sub-tasks
+            # does not hold back following subtasks
             ready.set()
         if should_run:
             await self._delays.wait_before(subcontext)
@@ -429,7 +429,7 @@ class _SubTasksJsonSchema:
 
 
 class SubTasks:
-    # sub-task name -> raw sub-task table, in definition order
+    # subtask name -> raw subtask table, in definition order
     type Config = Annotated[dict[str, dict[str, Any]], _SubTasksJsonSchema()]
 
     def __init__(self, name: str, subtasks: list[SubTaskInstance]):
